@@ -24,7 +24,7 @@
   <div class="wrap">
     <a class="wordmark" href="/">byananya<span>.</span></a>
     <nav class="nav" aria-label="Main">
-      <a href="#work">Work</a><a href="#about">About</a><a href="#ops">How I work</a><a href="#blog">Blog</a>
+      <a href="#work">Work</a><a href="#about">About</a><a href="#stack">Stack</a><a href="#blog">Blog</a>
     </nav>
     <div class="head-actions">
       <button class="theme" id="theme" aria-label="Switch between light and dark mode">
@@ -190,21 +190,13 @@
     </div>
   </section>
 
-  <section class="block" id="ops" aria-labelledby="ops-h">
-    <div class="sec-head"><h2 id="ops-h">A week with me<span>.</span></h2><p>What a founder gets with me in the room: operations, people, process, and the tools that make it all run.</p></div>
-    <ol class="week">
-      <li data-day="1"><span class="day">Mon</span><h3>Set the week.</h3><p>Run the weekly ops review, line up priorities with the founder, and make sure every task has an owner and a deadline.</p></li>
-      <li data-day="2"><span class="day">Tue</span><h3>Hire and onboard.</h3><p>Write the role, run the pipeline, sit in on interviews, and get new people productive in their first week.</p></li>
-      <li data-day="3"><span class="day">Wed</span><h3>Fix what's breaking.</h3><p>Find the handoff that keeps failing, redesign it, and write the SOP so it stays fixed.</p></li>
-      <li data-day="4"><span class="day">Thu</span><h3>Automate it.</h3><p>Turn the repeat work into workflows and AI tools that run without anyone babysitting them.</p></li>
-      <li data-day="5"><span class="day">Fri</span><h3>Show the numbers.</h3><p>Clean data, clear reports, and a short founder's update: what moved, what's stuck, what's next.</p></li>
-    </ol>
-    <p class="week-note" id="week-note"></p>
-    <div class="toolkit">
-      <div><h4>Operations</h4><p>Process design, SOPs, hiring and onboarding, CRM, reporting, Asana, Slack, Google Workspace, Go High Level</p></div>
-      <div><h4>Automation</h4><p>n8n, Make, webhooks, REST APIs, error handling, scheduled pipelines</p></div>
-      <div><h4>AI and build</h4><p>Python, FastAPI, LangGraph, LLM evaluation, Docker, PostgreSQL, Airflow</p></div>
-    </div>
+  <section class="block" id="stack" aria-labelledby="stack-h">
+    <div class="sec-head"><h2 id="stack-h">Stack<span>.</span></h2><p>What I reach for, day to day, to run operations and build the systems behind them.</p></div>
+    <ul class="stack-grid">
+      <li>n8n<small>workflow automation</small></li><li>Make<small>client automations</small></li><li>Python<small>building tools</small></li><li>FastAPI<small>APIs</small></li><li>LangGraph<small>AI agents</small></li><li>Gemini<small>LLM extraction</small></li>
+      <li>Groq<small>fast LLM calls</small></li><li>Tavily<small>web research</small></li><li>Docker<small>deployment</small></li><li>Airflow<small>data pipelines</small></li><li>PostgreSQL<small>databases</small></li><li>Render<small>hosting</small></li>
+      <li>Go High Level<small>CRM and pipelines</small></li><li>Asana<small>projects and owners</small></li><li>Slack<small>client workspaces</small></li><li>Google Workspace<small>docs and reporting</small></li><li>Excel<small>reporting</small></li><li>GitHub<small>code and versions</small></li>
+    </ul>
   </section>
 
   <section class="block" id="blog" aria-labelledby="blog-h">
@@ -331,17 +323,10 @@ document.querySelectorAll('.protected[data-src]').forEach(function (el) {
   frame();
 })();
 
-// "A week with me": highlight today
-(function () {
-  var d = new Date().getDay(), card = document.querySelector('.week [data-day="' + d + '"]'), note = document.getElementById('week-note');
-  if (card) { card.classList.add('today'); note.textContent = 'Highlighted: what I\'d be doing today.'; }
-  else { note.textContent = 'It\'s the weekend. I\'m probably on a trail.'; }
-})();
-
 // Scroll reveal
 (function () {
   if (calm || !('IntersectionObserver' in window)) return;
-  var els = document.querySelectorAll('.rv, .sec-head, .week li, .contact');
+  var els = document.querySelectorAll('.rv, .sec-head, .stack-grid li, .contact');
   var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }); }, { threshold: 0.1 });
   els.forEach(function (el, i) { el.classList.add('rv'); if (el.tagName === 'LI') el.style.transitionDelay = (i % 6) * 50 + 'ms'; io.observe(el); });
 })();
