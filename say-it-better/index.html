@@ -57,26 +57,26 @@
   <div class="field">
     <span class="lbl" id="who-l">Who's it from?</span>
     <div class="chips" role="group" aria-labelledby="who-l" data-group="who">
-      <button aria-pressed="false">Landlord</button><button aria-pressed="false">Client</button><button aria-pressed="false">Boss</button><button aria-pressed="false">Friend</button><button aria-pressed="false">Family</button><button aria-pressed="false">Someone new</button>
+      <button aria-pressed="false">Crush</button><button aria-pressed="false">Partner</button><button aria-pressed="false">Ex</button><button aria-pressed="false">Friend</button><button aria-pressed="false">Family</button><button aria-pressed="false">Distant relative</button><button aria-pressed="false">Boss</button><button aria-pressed="false">Client</button><button aria-pressed="false">Landlord</button><button aria-pressed="false">Someone new</button>
     </div>
   </div>
 
   <div class="field">
     <span class="lbl" id="want-l">What do you want?</span>
     <div class="chips" role="group" aria-labelledby="want-l" data-group="want">
-      <button aria-pressed="false">Say no</button><button aria-pressed="false">Get paid</button><button aria-pressed="false">Buy time</button><button aria-pressed="false">Set a boundary</button><button aria-pressed="false">Keep it friendly</button><button aria-pressed="false">Push back</button>
+      <button aria-pressed="false">Say no</button><button aria-pressed="false">Get paid</button><button aria-pressed="false">Buy time</button><button aria-pressed="false">Set a boundary</button><button aria-pressed="false">Keep it friendly</button><button aria-pressed="false">Push back</button><button aria-pressed="false">Flirt back</button><button aria-pressed="false">Keep my distance</button>
     </div>
   </div>
 
   <div class="actions">
     <button class="btn" id="go">Say it better</button>
     <button class="btn line" id="example">Try an example</button>
-    <span class="hint">Ctrl + Enter works too</span>
+    <span class="hint">Press Enter to send, Shift + Enter for a new line</span>
   </div>
 
   <div class="replies" id="out" aria-live="polite"></div>
 
-  <p class="foot">Built in an afternoon by Ananya, with an n8n workflow and Gemini behind it. Please don't paste anything private: messages go to Google's Gemini and aren't stored here.</p>
+  <p class="foot">Built in an afternoon by Ananya. Please don't paste anything private.</p>
 </div>
 
 <script>
@@ -87,7 +87,10 @@
     { m: "Hey! Any chance you could look over my pitch deck this weekend? It's only like 40 slides 🙏", who: 'Friend', want: 'Say no' },
     { m: "Hi, just letting you know the rent is going up by ₹3,000 from next month.", who: 'Landlord', want: 'Push back' },
     { m: "Loved the work! Can we quickly add three more pages? Should be small.", who: 'Client', want: 'Get paid' },
-    { m: "Can you jump on a quick call at 9pm tonight?", who: 'Boss', want: 'Set a boundary' }
+    { m: "Can you jump on a quick call at 9pm tonight?", who: 'Boss', want: 'Set a boundary' },
+    { m: "hey stranger, been thinking about you lately", who: 'Ex', want: 'Keep my distance' },
+    { m: "ok but are you free this saturday or are you going to pretend you're busy again", who: 'Crush', want: 'Flirt back' },
+    { m: "Beta, when are you getting married? Everyone is asking.", who: 'Distant relative', want: 'Keep it friendly' }
   ], ex = 0;
 
   document.querySelectorAll('.chips').forEach(function (g) {
@@ -104,7 +107,7 @@
   document.getElementById('example').addEventListener('click', function () {
     var e = EXAMPLES[ex++ % EXAMPLES.length]; msg.value = e.m; setPick('who', e.who); setPick('want', e.want); msg.focus();
   });
-  msg.addEventListener('keydown', function (e) { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) run(); });
+  msg.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); run(); } });
   go.addEventListener('click', run);
 
   function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -113,10 +116,15 @@
   async function run() {
     var text = msg.value.trim();
     if (!text) { msg.focus(); note('Paste the message you need to reply to first.'); return; }
-    go.disabled = true; go.textContent = 'Thinking…';
+    if (go.disabled) return;
+    go.disabled = true;
+    var steps = ['Reading the room…', 'Finding the right words…', 'Polishing the replies…', 'Almost there…'], si = 0;
+    go.textContent = steps[0];
+    var tick = setInterval(function () { si = Math.min(si + 1, steps.length - 1); go.textContent = steps[si]; }, 2500);
     out.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
+    var ctrl = new AbortController(), timer = setTimeout(function () { ctrl.abort(); }, 30000);
     try {
-      var r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      var r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, signal: ctrl.signal,
         body: JSON.stringify({ message: text.slice(0, 1500), who: pick('who'), want: pick('want') }) });
       var res = await r.json().catch(function () { return {}; });
       if (!res.ok) throw new Error(res.error || 'failed');
@@ -124,8 +132,8 @@
         return '<div class="reply"><span class="tone">' + x[0] + '</span><p>' + esc(x[1] || '') + '</p><button class="copy">Copy</button></div>';
       }).join('');
     } catch (e) {
-      note(e.message === 'busy' ? 'Lots of people are using this right now. Give it a minute and try again.' : 'Something went wrong on my side. Try again in a moment.');
-    } finally { go.disabled = false; go.textContent = 'Say it better'; }
+      note(e.name === 'AbortError' ? 'That took too long. Try once more.' : e.message === 'busy' ? 'Lots of people are using this right now. Give it a minute and try again.' : 'Something went wrong on my side. Try again in a moment.');
+    } finally { clearInterval(tick); clearTimeout(timer); go.disabled = false; go.textContent = 'Say it better'; }
   }
 
   out.addEventListener('click', function (e) {
