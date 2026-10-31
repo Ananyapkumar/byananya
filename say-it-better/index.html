@@ -76,14 +76,12 @@
 
   <div class="replies" id="out" aria-live="polite"></div>
 
-  <p class="foot">Built in an afternoon by Ananya. Please don't paste anything private: messages are processed by Google's Gemini free tier and aren't stored here.</p>
+  <p class="foot">Built in an afternoon by Ananya, with an n8n workflow and Gemini behind it. Please don't paste anything private: messages go to Google's Gemini and aren't stored here.</p>
 </div>
 
-<script src="config.js"></script>
 <script>
 (function () {
-  var KEY = window.SIB_KEY || '';
-  var MODELS = ['gemini-3.5-flash-lite', 'gemini-2.5-flash-lite', 'gemini-2.5-flash'];
+  var API = 'https://ananya1234.app.n8n.cloud/webhook/say-it-better';
   var msg = document.getElementById('msg'), out = document.getElementById('out'), go = document.getElementById('go');
   var EXAMPLES = [
     { m: "Hey! Any chance you could look over my pitch deck this weekend? It's only like 40 slides 🙏", who: 'Friend', want: 'Say no' },
@@ -112,41 +110,18 @@
   function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function note(text) { out.innerHTML = '<div class="note">' + text + '</div>'; }
 
-  function prompt(text, who, want) {
-    return 'Someone sent me this message:\n"""' + text + '"""\n' +
-      (who ? 'It is from my ' + who.toLowerCase() + '.\n' : '') +
-      (want ? 'What I want from my reply: ' + want.toLowerCase() + '.\n' : '') +
-      'Write three replies I could send, in my voice, like a real person texting. Rules: each under 45 words; natural and warm, never robotic or corporate; ' +
-      'no "I hope this message finds you well"; polite = kind and gracious; firm = clear and confident, not rude; funny = light and witty, never mean, at most one emoji. ' +
-      'Match the language of their message. Return only JSON: {"polite": "...", "firm": "...", "funny": "..."}';
-  }
-
-  async function call(model, body) {
-    var r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + encodeURIComponent(KEY), {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
-    });
-    if (r.status === 404) return null;
-    if (r.status === 429) throw new Error('busy');
-    if (!r.ok) throw new Error('http ' + r.status);
-    var d = await r.json();
-    var t = ((((d.candidates || [])[0] || {}).content || {}).parts || []).map(function (p) { return p.text || ''; }).join('');
-    return JSON.parse(t.replace(/```json|```/g, '').trim());
-  }
-
   async function run() {
     var text = msg.value.trim();
     if (!text) { msg.focus(); note('Paste the message you need to reply to first.'); return; }
-    if (!KEY) { note('This demo is waking up. The AI key isn’t connected yet, so check back soon.'); return; }
     go.disabled = true; go.textContent = 'Thinking…';
     out.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
-    var body = { contents: [{ role: 'user', parts: [{ text: prompt(text, pick('who'), pick('want')) }] }],
-                 generationConfig: { temperature: 0.9, responseMimeType: 'application/json' } };
     try {
-      var res = null;
-      for (var i = 0; i < MODELS.length && !res; i++) res = await call(MODELS[i], body);
-      if (!res || !res.polite) throw new Error('empty');
-      out.innerHTML = [['Polite', res.polite], ['Firm', res.firm], ['Funny', res.funny]].map(function (r) {
-        return '<div class="reply"><span class="tone">' + r[0] + '</span><p>' + esc(r[1] || '') + '</p><button class="copy">Copy</button></div>';
+      var r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text.slice(0, 1500), who: pick('who'), want: pick('want') }) });
+      var res = await r.json().catch(function () { return {}; });
+      if (!res.ok) throw new Error(res.error || 'failed');
+      out.innerHTML = [['Polite', res.polite], ['Firm', res.firm], ['Funny', res.funny]].map(function (x) {
+        return '<div class="reply"><span class="tone">' + x[0] + '</span><p>' + esc(x[1] || '') + '</p><button class="copy">Copy</button></div>';
       }).join('');
     } catch (e) {
       note(e.message === 'busy' ? 'Lots of people are using this right now. Give it a minute and try again.' : 'Something went wrong on my side. Try again in a moment.');
