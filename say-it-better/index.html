@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Say it better | by ananya</title>
+<meta name="description" content="Paste the message you're stuck replying to. Get three ways to answer: polite, firm and funny.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='40' fill='%239a6b1f'/%3E%3C/svg%3E">
+<script>try { var t = localStorage.getItem('theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+  .app { max-width: 44rem; margin: 0 auto; padding: 1rem 1.5rem 4rem; }
+  .bar { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0 2.5rem; }
+  .app h1 { font-size: clamp(2.6rem, 8vw, 4.2rem); font-weight: 800; letter-spacing: -0.055em; line-height: .95; }
+  .app h1 span { color: var(--accent); }
+  .lede { color: var(--muted); font-size: 1.15rem; margin-top: 1rem; max-width: 32rem; }
+  .field { margin-top: 2rem; }
+  .field label, .field .lbl { display: block; font-weight: 700; font-size: .92rem; margin-bottom: .6rem; }
+  textarea { width: 100%; min-height: 8.5rem; resize: vertical; font: inherit; font-size: 1.05rem; line-height: 1.55; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 1rem 1.1rem; }
+  textarea:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .chips { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .chips button { font: inherit; font-size: .9rem; font-weight: 600; padding: .5rem 1rem; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer; }
+  .chips button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .actions { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin-top: 2rem; }
+  .actions .btn { cursor: pointer; font-family: inherit; }
+  .actions .btn[disabled] { opacity: .6; cursor: wait; transform: none; }
+  .hint { font-size: .85rem; color: var(--muted); }
+  .replies { display: grid; gap: 1rem; margin-top: 2.5rem; }
+  .reply { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 1.25rem 1.3rem 1.1rem; animation: pop .45s cubic-bezier(.2,.8,.2,1) both; }
+  .reply:nth-child(2) { animation-delay: .08s; } .reply:nth-child(3) { animation-delay: .16s; }
+  @keyframes pop { from { opacity: 0; transform: translateY(14px); } }
+  .reply .tone { font-size: .8rem; font-weight: 800; color: var(--accent); }
+  .reply p { font-size: 1.08rem; margin-top: .4rem; white-space: pre-wrap; }
+  .reply .copy { margin-top: .9rem; font: inherit; font-size: .85rem; font-weight: 700; background: var(--soft); color: var(--ink); border: 0; border-radius: 999px; padding: .4rem .9rem; cursor: pointer; }
+  .skeleton { height: 7.5rem; border-radius: 20px; background: linear-gradient(90deg, var(--soft), var(--surface), var(--soft)); background-size: 200% 100%; animation: shimmer 1.2s infinite linear; }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+  .note { margin-top: 2rem; padding: 1rem 1.2rem; border-radius: 16px; background: var(--soft); color: var(--muted); font-size: .95rem; }
+  .foot { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .85rem; }
+  @media (prefers-reduced-motion: reduce) { .reply, .skeleton { animation: none; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="bar"><a class="wordmark" href="/">byananya<span>.</span></a><a class="btn line" href="/#work">More work</a></div>
+
+  <h1>Say it <span>better.</span></h1>
+  <p class="lede">Stuck on a reply? Paste their message and get three ways to answer: polite, firm and funny.</p>
+
+  <div class="field">
+    <label for="msg">Their message</label>
+    <textarea id="msg" placeholder="Hey, just letting you know the rent is going up by ₹3,000 from next month."></textarea>
+  </div>
+
+  <div class="field">
+    <span class="lbl" id="who-l">Who's it from?</span>
+    <div class="chips" role="group" aria-labelledby="who-l" data-group="who">
+      <button aria-pressed="false">Landlord</button><button aria-pressed="false">Client</button><button aria-pressed="false">Boss</button><button aria-pressed="false">Friend</button><button aria-pressed="false">Family</button><button aria-pressed="false">Someone new</button>
+    </div>
+  </div>
+
+  <div class="field">
+    <span class="lbl" id="want-l">What do you want?</span>
+    <div class="chips" role="group" aria-labelledby="want-l" data-group="want">
+      <button aria-pressed="false">Say no</button><button aria-pressed="false">Get paid</button><button aria-pressed="false">Buy time</button><button aria-pressed="false">Set a boundary</button><button aria-pressed="false">Keep it friendly</button><button aria-pressed="false">Push back</button>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn" id="go">Say it better</button>
+    <button class="btn line" id="example">Try an example</button>
+    <span class="hint">Ctrl + Enter works too</span>
+  </div>
+
+  <div class="replies" id="out" aria-live="polite"></div>
+
+  <p class="foot">Built in an afternoon by Ananya. Please don't paste anything private: messages are processed by Google's Gemini free tier and aren't stored here.</p>
+</div>
+
+<script src="config.js"></script>
+<script>
+(function () {
+  var KEY = window.SIB_KEY || '';
+  var MODELS = ['gemini-3.5-flash-lite', 'gemini-2.5-flash-lite', 'gemini-2.5-flash'];
+  var msg = document.getElementById('msg'), out = document.getElementById('out'), go = document.getElementById('go');
+  var EXAMPLES = [
+    { m: "Hey! Any chance you could look over my pitch deck this weekend? It's only like 40 slides 🙏", who: 'Friend', want: 'Say no' },
+    { m: "Hi, just letting you know the rent is going up by ₹3,000 from next month.", who: 'Landlord', want: 'Push back' },
+    { m: "Loved the work! Can we quickly add three more pages? Should be small.", who: 'Client', want: 'Get paid' },
+    { m: "Can you jump on a quick call at 9pm tonight?", who: 'Boss', want: 'Set a boundary' }
+  ], ex = 0;
+
+  document.querySelectorAll('.chips').forEach(function (g) {
+    g.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      var on = b.getAttribute('aria-pressed') === 'true';
+      g.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', 'false'); });
+      b.setAttribute('aria-pressed', on ? 'false' : 'true');
+    });
+  });
+  function pick(group) { var b = document.querySelector('[data-group="' + group + '"] [aria-pressed="true"]'); return b ? b.textContent : ''; }
+  function setPick(group, label) { document.querySelectorAll('[data-group="' + group + '"] button').forEach(function (b) { b.setAttribute('aria-pressed', b.textContent === label ? 'true' : 'false'); }); }
+
+  document.getElementById('example').addEventListener('click', function () {
+    var e = EXAMPLES[ex++ % EXAMPLES.length]; msg.value = e.m; setPick('who', e.who); setPick('want', e.want); msg.focus();
+  });
+  msg.addEventListener('keydown', function (e) { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) run(); });
+  go.addEventListener('click', run);
+
+  function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function note(text) { out.innerHTML = '<div class="note">' + text + '</div>'; }
+
+  function prompt(text, who, want) {
+    return 'Someone sent me this message:\n"""' + text + '"""\n' +
+      (who ? 'It is from my ' + who.toLowerCase() + '.\n' : '') +
+      (want ? 'What I want from my reply: ' + want.toLowerCase() + '.\n' : '') +
+      'Write three replies I could send, in my voice, like a real person texting. Rules: each under 45 words; natural and warm, never robotic or corporate; ' +
+      'no "I hope this message finds you well"; polite = kind and gracious; firm = clear and confident, not rude; funny = light and witty, never mean, at most one emoji. ' +
+      'Match the language of their message. Return only JSON: {"polite": "...", "firm": "...", "funny": "..."}';
+  }
+
+  async function call(model, body) {
+    var r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + encodeURIComponent(KEY), {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    });
+    if (r.status === 404) return null;
+    if (r.status === 429) throw new Error('busy');
+    if (!r.ok) throw new Error('http ' + r.status);
+    var d = await r.json();
+    var t = ((((d.candidates || [])[0] || {}).content || {}).parts || []).map(function (p) { return p.text || ''; }).join('');
+    return JSON.parse(t.replace(/```json|```/g, '').trim());
+  }
+
+  async function run() {
+    var text = msg.value.trim();
+    if (!text) { msg.focus(); note('Paste the message you need to reply to first.'); return; }
+    if (!KEY) { note('This demo is waking up. The AI key isn’t connected yet, so check back soon.'); return; }
+    go.disabled = true; go.textContent = 'Thinking…';
+    out.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
+    var body = { contents: [{ role: 'user', parts: [{ text: prompt(text, pick('who'), pick('want')) }] }],
+                 generationConfig: { temperature: 0.9, responseMimeType: 'application/json' } };
+    try {
+      var res = null;
+      for (var i = 0; i < MODELS.length && !res; i++) res = await call(MODELS[i], body);
+      if (!res || !res.polite) throw new Error('empty');
+      out.innerHTML = [['Polite', res.polite], ['Firm', res.firm], ['Funny', res.funny]].map(function (r) {
+        return '<div class="reply"><span class="tone">' + r[0] + '</span><p>' + esc(r[1] || '') + '</p><button class="copy">Copy</button></div>';
+      }).join('');
+    } catch (e) {
+      note(e.message === 'busy' ? 'Lots of people are using this right now. Give it a minute and try again.' : 'Something went wrong on my side. Try again in a moment.');
+    } finally { go.disabled = false; go.textContent = 'Say it better'; }
+  }
+
+  out.addEventListener('click', function (e) {
+    var b = e.target.closest('.copy'); if (!b) return;
+    var t = b.previousElementSibling.textContent;
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1500); }, function () { b.textContent = 'Select and copy'; });
+  });
+})();
+</script>
+</body>
+</html>
