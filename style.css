@@ -27,7 +27,7 @@ html { scroll-behavior: smooth; }
 body {
   background: var(--bg);
   color: var(--ink);
-  font-family: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  font-family: "Geist", "Helvetica Neue", Arial, sans-serif;
   font-size: 1.0625rem;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -41,13 +41,13 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-
 
 /* header */
 .site-head { display: flex; justify-content: space-between; align-items: baseline; padding: 2rem 0; }
-.wordmark { font-weight: 700; text-decoration: none; letter-spacing: -0.02em; }
+.wordmark { font-family: "Instrument Serif", Georgia, serif; font-style: italic; font-size: 1.5rem; font-weight: 400; text-decoration: none; letter-spacing: 0; }
 .site-head nav { display: flex; gap: 1.5rem; font-size: 0.95rem; }
 .site-head nav a { text-decoration: none; color: var(--muted); }
 .site-head nav a:hover { color: var(--ink); }
 
 /* hero */
-.hero { padding: 4rem 0 1rem; }
+.hero { padding: 4rem 0 0.5rem; }
 .hero-top { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem; }
 .photo {
   width: 112px; height: 112px; flex: none; border-radius: 50%;
@@ -61,35 +61,20 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-
 .photo.has-photo span { display: none; }
 
 h1 {
-  font-size: clamp(2.75rem, 8vw, 4.75rem);
-  font-weight: 800; line-height: 0.95; letter-spacing: -0.045em;
+  font-family: "Instrument Serif", Georgia, serif;
+  font-size: clamp(3.25rem, 9vw, 5.5rem);
+  font-weight: 400; line-height: 0.95; letter-spacing: -0.02em;
 }
 .statement {
-  font-size: clamp(1.35rem, 3.2vw, 1.75rem);
-  line-height: 1.35; letter-spacing: -0.015em; font-weight: 500;
-  max-width: 34ch;
+  font-size: clamp(1.4rem, 3.4vw, 1.85rem);
+  line-height: 1.3; letter-spacing: -0.02em; font-weight: 500;
+  max-width: 30ch;
 }
 .sub { color: var(--muted); margin-top: 1rem; max-width: 52ch; }
 
-/* the route line */
-.route { width: 100%; height: auto; display: block; margin: 2.5rem 0 0; overflow: visible; }
-.route path {
-  fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round;
-  stroke-dasharray: 1; stroke-dashoffset: 1;
-  animation: draw 2.4s cubic-bezier(.6,.05,.3,1) .3s forwards;
-}
-.route circle { fill: var(--accent); opacity: 0; animation: pop .3s ease-out 2.6s forwards; }
-.route .start { fill: var(--bg); stroke: var(--accent); stroke-width: 2.5; opacity: 1; animation: none; }
-@keyframes draw { to { stroke-dashoffset: 0; } }
-@keyframes pop { to { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) {
-  .route path { animation: none; stroke-dashoffset: 0; }
-  .route circle { animation: none; opacity: 1; }
-}
-
 /* sections */
 section { padding: 4.5rem 0 0; }
-h2 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 1.5rem; }
+h2 { font-family: "Instrument Serif", Georgia, serif; font-size: 2.6rem; font-weight: 400; letter-spacing: -0.01em; line-height: 1; margin-bottom: 1.5rem; }
 
 .work-list, .post-list { list-style: none; border-top: 1px solid var(--rule); }
 .work-list li, .post-list li { border-bottom: 1px solid var(--rule); padding: 1.5rem 0; }
@@ -107,7 +92,11 @@ h2 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.03em; margin-botto
 .post-list time { font-size: 0.9rem; color: var(--muted); white-space: nowrap; }
 .post-list .summary { display: block; color: var(--muted); font-size: 0.95rem; margin-top: 0.25rem; max-width: 60ch; }
 .section-note { color: var(--muted); margin: -0.75rem 0 1.5rem; }
-.list-head { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.01em; margin: 2.5rem 0 1rem; }
+.list-head { font-size: 1.2rem; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 0.5rem; }
+.blog-group + .blog-group { margin-top: 3.5rem; }
+.blog-group .section-note { margin: 0 0 1.25rem; }
+.blog-group .outdoor-photo { margin-top: 1rem; }
+.blog-group > p { margin-bottom: 1.5rem; }
 .interests .links { display: flex; gap: 1.25rem; margin-top: 1rem; font-weight: 600; }
 .empty { color: var(--muted); }
 
@@ -120,7 +109,7 @@ h2 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.03em; margin-botto
 .outdoor-photo::after { content: ""; position: absolute; inset: 0; }
 
 .contact .email {
-  display: inline-block; font-size: clamp(1.6rem, 5vw, 2.4rem); font-weight: 700; letter-spacing: -0.03em;
+  display: inline-block; font-size: clamp(1.5rem, 5vw, 2.2rem); font-weight: 600; letter-spacing: -0.03em;
   text-decoration: none; border-bottom: 3px solid var(--accent); line-height: 1.2;
 }
 .contact .links { display: flex; gap: 1.5rem; margin-top: 1.5rem; }
@@ -131,11 +120,11 @@ h2 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.03em; margin-botto
 .post { padding: 3rem 0 0; }
 .post .back { font-size: 0.95rem; color: var(--muted); text-decoration: none; }
 .post header { margin: 2rem 0 2.5rem; }
-.post h1 { font-size: clamp(2.2rem, 6vw, 3.4rem); line-height: 1.05; }
+.post h1 { font-size: clamp(2.4rem, 6.5vw, 3.8rem); line-height: 1.05; }
 .post .meta { color: var(--muted); margin-top: 1rem; font-size: 0.95rem; }
 .prose { max-width: 62ch; font-size: 1.1rem; line-height: 1.7; }
 .prose > * + * { margin-top: 1.1em; }
-.prose h2 { font-size: 1.45rem; margin: 2.2em 0 0; }
+.prose h2 { font-family: "Geist", "Helvetica Neue", Arial, sans-serif; font-size: 1.35rem; font-weight: 650; letter-spacing: -0.015em; line-height: 1.3; margin: 2.2em 0 0; }
 .prose h3 { font-size: 1.2rem; margin-top: 1.8em; }
 .prose ul, .prose ol { padding-left: 1.3em; }
 .prose li + li { margin-top: 0.35em; }
@@ -152,3 +141,4 @@ h2 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.03em; margin-botto
   .photo { width: 120px; height: 120px; }
   .post-list a { flex-direction: column; gap: 0.15rem; }
 }
+@media (min-width: 561px) { h1 { white-space: nowrap; } }
