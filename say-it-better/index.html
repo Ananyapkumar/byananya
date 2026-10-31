@@ -28,6 +28,8 @@
   .box textarea { padding-right: 4.25rem; }
   .mic { position: absolute; right: .75rem; bottom: .9rem; width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--line); background: var(--bg); color: var(--ink); display: grid; place-items: center; cursor: pointer; transition: transform .15s ease; }
   .mic:hover { transform: scale(1.06); }
+  .clear { position: absolute; right: .9rem; top: .75rem; width: 30px; height: 30px; border-radius: 50%; border: 0; background: var(--soft); color: var(--muted); font-size: 1.15rem; line-height: 1; cursor: pointer; }
+  .clear:hover { color: var(--ink); }
   .mic svg { width: 20px; height: 20px; }
   .mic.on { background: var(--accent); border-color: var(--accent); color: var(--bg); animation: ring 1.4s infinite; }
   @keyframes ring { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); } 100% { box-shadow: 0 0 0 16px transparent; } }
@@ -72,6 +74,7 @@
     <label for="msg" id="msg-label">What you want to say</label>
     <div class="box">
       <textarea id="msg" placeholder="Say it the messy way. Example: my boss keeps messaging me after 9pm and I hate it"></textarea>
+      <button class="clear" id="clear" type="button" aria-label="Clear the message" hidden>×</button>
       <button class="mic" id="mic" type="button" aria-label="Speak your message" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"/></svg>
       </button>
@@ -126,6 +129,10 @@
       b.setAttribute('aria-pressed', on ? 'false' : 'true');
     });
   });
+  var clearBtn = document.getElementById('clear');
+  function toggleClear() { clearBtn.hidden = !msg.value; }
+  msg.addEventListener('input', toggleClear);
+  clearBtn.addEventListener('click', function () { msg.value = ''; out.innerHTML = ''; toggleClear(); msg.focus(); });
   var mode = 'rephrase', label = document.getElementById('msg-label'), whoL = document.getElementById('who-l');
   function setMode(m) {
     mode = m;
@@ -139,7 +146,7 @@
   function setPick(group, label) { document.querySelectorAll('[data-group="' + group + '"] button').forEach(function (b) { b.setAttribute('aria-pressed', b.textContent === label ? 'true' : 'false'); }); }
 
   document.getElementById('example').addEventListener('click', function () {
-    var e = EXAMPLES[ex++ % EXAMPLES.length]; setMode(e.mode); msg.value = e.m; setPick('who', e.who); setPick('want', e.want); msg.focus();
+    var e = EXAMPLES[ex++ % EXAMPLES.length]; setMode(e.mode); msg.value = e.m; toggleClear(); setPick('who', e.who); setPick('want', e.want); msg.focus();
   });
   msg.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); run(); } });
   go.addEventListener('click', run);
@@ -176,18 +183,28 @@
     var mic = document.getElementById('mic'), hint = document.getElementById('listening');
     if (!SR) return;
     mic.hidden = false;
-    var rec = null, base = '', heard = '';
+    var rec = null, finalText = '', heard = '';
     function stop() { if (rec) rec.stop(); }
     mic.addEventListener('click', function () {
       if (rec) { stop(); return; }
       rec = new SR();
       rec.lang = navigator.language || 'en-IN';
       rec.interimResults = true; rec.continuous = true;
-      base = msg.value.trim() ? msg.value.trim() + ' ' : ''; heard = '';
+      msg.value = ''; out.innerHTML = ''; finalText = ''; heard = ''; toggleClear();
       rec.onresult = function (e) {
-        var fin = '', interim = '';
-        for (var i = 0; i < e.results.length; i++) { (e.results[i].isFinal ? (fin += e.results[i][0].transcript) : (interim += e.results[i][0].transcript)); }
-        heard = (fin + interim).trim(); msg.value = base + heard;
+        var interim = '';
+        for (var i = e.resultIndex; i < e.results.length; i++) {
+          var t = e.results[i][0].transcript.trim();
+          if (!t) continue;
+          if (e.results[i].isFinal) {
+            // some phones resend the whole sentence so far; replace instead of repeating it
+            if (finalText && t.toLowerCase().indexOf(finalText.toLowerCase()) === 0) finalText = t;
+            else if (finalText.toLowerCase().slice(-t.length) !== t.toLowerCase()) finalText = (finalText + ' ' + t).trim();
+          } else { interim = t; }
+        }
+        var lowF = finalText.toLowerCase(), lowI = interim.toLowerCase();
+        heard = !interim ? finalText : (finalText && lowI.indexOf(lowF) === 0) ? interim : (finalText + ' ' + interim).trim();
+        msg.value = heard; toggleClear();
       };
       rec.onerror = function (e) { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') note('Allow microphone access in your browser to use voice.'); };
       rec.onend = function () {
