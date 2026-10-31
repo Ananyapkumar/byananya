@@ -14,7 +14,7 @@ Then it does the thing a good friend would do if they were sitting beside you. I
 
 **Pointing beats explaining.** When someone teaches you software in person, they don't hand you a paragraph. They lean over and go "there, that one." Marv copies that, and it's the part that made me smile. It's such a human way to help.
 
-**It's quietly useful for everyone.** I immediately thought of three people: the friend learning a new tool for her job, my parents fighting their laptop settings, and me, every single time I open software I use twice a year.
+**It's quietly useful for everyone.** I immediately thought of three kinds of people: anyone learning a new tool for work, every parent who has ever fought their laptop settings, and me, every single time I open software I use twice a year.
 
 ## How did I miss this?
 
