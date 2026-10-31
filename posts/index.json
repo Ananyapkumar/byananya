@@ -1,5 +1,13 @@
 [
   {
+    "slug": "marv-the-cursor-that-shows-you",
+    "title": "Marv circles the button you can't find, and I'm obsessed",
+    "date": "2026-10-31",
+    "summary": "A tiny Windows AI tool that talks you through any app and draws right on your screen.",
+    "topic": "tech",
+    "cover": "assets/covers/marv.jpg"
+  },
+  {
     "slug": "work-email-on-my-own-domain",
     "title": "Setting up a work email on my own domain",
     "date": "2026-10-31",
