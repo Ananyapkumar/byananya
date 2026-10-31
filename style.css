@@ -130,20 +130,11 @@ section.block { padding-top: 6rem; }
 .journey span { color: var(--muted); font-size: .9rem; }
 .journey time { color: var(--muted); font-size: .9rem; grid-row: span 2; align-self: center; white-space: nowrap; }
 
-/* a week with me */
-.week { list-style: none; display: grid; grid-template-columns: repeat(5, 1fr); gap: .9rem; }
-.week li { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.3rem 1.2rem 1.5rem; display: flex; flex-direction: column; transition: transform .25s ease, border-color .25s ease; }
-.week li:hover { transform: translateY(-4px); border-color: var(--accent); }
-.week .day { font-size: .8rem; font-weight: 800; letter-spacing: .02em; color: var(--accent); }
-.week h3 { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.2; margin-top: 2.5rem; }
-.week p { font-size: .92rem; color: var(--muted); margin-top: .5rem; line-height: 1.5; }
-.week li.today { background: var(--ink); border-color: var(--ink); color: var(--bg); }
-.week li.today p { color: color-mix(in srgb, var(--bg) 70%, transparent); }
-.week li.today .day::after { content: "Today"; margin-left: .5rem; font-size: .7rem; padding: .15rem .5rem; border-radius: 999px; background: var(--accent); color: var(--ink); }
-.week-note { font-size: .85rem; color: var(--muted); margin-top: .9rem; }
-.toolkit { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--line); }
-.toolkit h4 { font-size: .95rem; font-weight: 800; letter-spacing: -0.01em; }
-.toolkit p { color: var(--muted); font-size: .95rem; margin-top: .4rem; }
+/* stack */
+.stack-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: .75rem; list-style: none; }
+.stack-grid li { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 1.1rem .9rem; text-align: center; font-weight: 700; font-size: .92rem; letter-spacing: -0.01em; transition: transform .2s ease, border-color .2s ease; }
+.stack-grid li:hover { transform: translateY(-3px); border-color: var(--accent); }
+.stack-grid li small { display: block; font-weight: 500; font-size: .75rem; color: var(--muted); margin-top: .15rem; }
 
 /* blog */
 .post-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; list-style: none; }
@@ -212,8 +203,7 @@ section.block { padding-top: 6rem; }
   .hero-points { grid-template-columns: 1fr; }
   .statement, .about, .case-body { grid-template-columns: 1fr; }
   .statement .photo { max-width: 420px; }
-  .week { grid-template-columns: repeat(2, 1fr); }
-  .toolkit { grid-template-columns: 1fr; gap: 1.25rem; }
+  .stack-grid { grid-template-columns: repeat(3, 1fr); }
   .post-grid { grid-template-columns: repeat(2, 1fr); }
   .about .photos { min-height: 28rem; max-width: 480px; }
 }
@@ -222,8 +212,7 @@ section.block { padding-top: 6rem; }
   .hero { padding-top: 3rem; }
   .stage { aspect-ratio: 4 / 3.6; }
   .points { grid-template-columns: 1fr; }
-  .week { grid-template-columns: 1fr; }
-  .week h3 { margin-top: .75rem; }
+  .stack-grid { grid-template-columns: repeat(2, 1fr); }
   .post-grid { grid-template-columns: 1fr; }
   .about .photos { min-height: 24rem; }
   .prompt { font-size: .85rem; bottom: 1rem; }
