@@ -3,22 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Blog | Ananya P Kumar</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%233a4bff'/></svg>">
+<title>Blog | by ananya</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='40' fill='%23ff4f79'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400..800&family=Instrument+Sans:wght@400..700&family=Caveat:wght@500..700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <script src="assets/marked.min.js"></script>
 </head>
 <body>
-<div class="wrap">
+<div class="wrap narrow">
   <header class="site-head">
     <a class="wordmark" href="/">byananya</a>
     <nav>
       <a href="/#work">Work</a>
       <a href="/#blog">Blog</a>
-      <a href="/#contact">Contact</a>
+      <a href="/#hi">Say hi</a>
     </nav>
   </header>
 
@@ -28,30 +28,34 @@
       <h1 id="title">Loading</h1>
       <p class="meta" id="meta"></p>
     </header>
+    <div class="post-cover protected" id="cover" hidden></div>
     <article class="prose" id="body"></article>
+    <p class="signoff">— ananya</p>
   </main>
 
-  <footer class="site-foot">© 2026 Ananya P Kumar</footer>
+  <footer class="site-foot">© 2026 byananya. Made by Ananya, obviously.</footer>
 </div>
 
 <script>
 (function () {
   var slug = new URLSearchParams(location.search).get('p');
-  var title = document.getElementById('title');
-  var meta = document.getElementById('meta');
-  var body = document.getElementById('body');
-
+  var title = document.getElementById('title'), meta = document.getElementById('meta');
+  var body = document.getElementById('body'), cover = document.getElementById('cover');
   function fail(msg) { title.textContent = 'Post not found'; meta.textContent = ''; body.innerHTML = '<p>' + msg + ' <a href="/#blog">See all posts</a>.</p>'; }
   if (!slug) return fail('This link is missing the post name.');
-
   fetch('posts/index.json')
     .then(function (r) { return r.json(); })
     .then(function (posts) {
       var p = posts.find(function (x) { return x.slug === slug; });
       if (!p) throw new Error('missing');
       title.textContent = p.title;
-      document.title = p.title + ' | Ananya P Kumar';
-      meta.textContent = new Date(p.date + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+      document.title = p.title + ' | by ananya';
+      meta.textContent = new Date(p.date + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) +
+        (p.topic === 'health' ? ', running and health' : ', AI, automation and software');
+      if (p.cover) {
+        cover.style.backgroundImage = 'url(' + p.cover + ')'; cover.hidden = false;
+        ['contextmenu', 'dragstart'].forEach(function (e) { cover.addEventListener(e, function (ev) { ev.preventDefault(); }); });
+      }
       return fetch('posts/' + slug + '.md');
     })
     .then(function (r) { if (!r.ok) throw new Error('missing'); return r.text(); })
