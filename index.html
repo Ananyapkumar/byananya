@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ananya P Kumar</title>
+<meta name="description" content="Ananya P Kumar builds AI systems and automations, and measures whether they work. Projects include Clause and agent-contract.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%233a4bff'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="site-head">
+    <a class="wordmark" href="/">byananya</a>
+    <nav>
+      <a href="#work">Work</a>
+      <a href="#writing">Writing</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" aria-label="Introduction">
+      <div class="hero-top">
+        <div class="photo" id="photo" role="img" aria-label="Photo of Ananya"><span>A</span></div>
+        <h1>Ananya P&nbsp;Kumar</h1>
+      </div>
+      <p class="statement">I build AI systems and automations, then measure whether they actually work.</p>
+      <p class="sub">Operations background, now building with n8n, Python, APIs and Docker. Based in Bangalore, moving to Kozhikode.</p>
+
+      <svg class="route" viewBox="0 0 720 90" aria-hidden="true">
+        <path pathLength="1" d="M8 62 C 60 62, 70 22, 130 26 S 210 74, 270 66 S 340 14, 400 20 S 470 70, 530 58 S 610 18, 660 30 S 700 48, 712 44"/>
+        <circle class="start" cx="8" cy="62" r="5"/>
+        <circle cx="712" cy="44" r="6"/>
+      </svg>
+    </section>
+
+    <section id="work">
+      <h2>Work</h2>
+      <ul class="work-list">
+
+        <li>
+          <div class="work-head">
+            <h3>Clause</h3>
+            <span class="status live">Live API</span>
+          </div>
+          <p>Pulls nine specs out of lighting product datasheets, where the right answer is often one of two similar numbers printed side by side. Scored 99.4% field accuracy (161 of 162) against hand-written ground truth, with the result predicted before the run. Built and run for $0.</p>
+          <p class="stack">Python, FastAPI, Gemini, LangGraph, Render</p>
+          <p class="links"><a href="https://github.com/Ananyapkumar/clause" rel="noopener">Code</a><a href="https://clause-9kq9.onrender.com/docs" rel="noopener">Try the API</a></p>
+        </li>
+
+        <li>
+          <div class="work-head">
+            <h3>agent-contract</h3>
+            <span class="status live">v0.3, open source</span>
+          </div>
+          <p>Catches AI agents in n8n that “succeed” while returning garbage: refusals, missing fields, cut-off output, or answers given without calling the tool they were supposed to use. Nine checks, no AI, no API key, one file you paste into a Code node.</p>
+          <p class="stack">JavaScript, n8n</p>
+          <p class="links"><a href="https://github.com/Ananyapkumar/agent-contract" rel="noopener">Code</a></p>
+        </li>
+
+        <li>
+          <div class="work-head">
+            <h3>Crypto data pipeline</h3>
+            <span class="status">Complete</span>
+          </div>
+          <p>A production-style pipeline built for reliability: scheduled ingestion, fault tolerance, and data that stays consistent when runs fail halfway.</p>
+          <p class="stack">Python, Airflow, Docker, PostgreSQL</p>
+          <p class="links"><a href="https://github.com/Ananyapkumar/crypto-data-pipeline" rel="noopener">Code</a></p>
+        </li>
+
+        <li>
+          <div class="work-head">
+            <h3>Founder outreach pipeline</h3>
+            <span class="status">Building</span>
+          </div>
+          <p>Finds Series A–funded Indian startups and India-based YC companies, pulls a short brief on each founder and their city, and drops everything into a tracker that marks who's been contacted.</p>
+          <p class="stack">n8n, Google Sheets, free-tier APIs</p>
+        </li>
+
+        <li>
+          <div class="work-head">
+            <h3>PDF layout engine</h3>
+            <span class="status live">In daily use</span>
+          </div>
+          <p>Turns raw daily notes into print-ready documents that match an existing reference file exactly. It reverse-engineers the page geometry from the original PDF, merges duplicate entries and groups related items automatically.</p>
+          <p class="stack">Python, ReportLab</p>
+        </li>
+
+        <li>
+          <div class="work-head">
+            <h3>Skyscanner for clothes</h3>
+            <span class="status">Early build</span>
+          </div>
+          <p>Upload a photo of a dress, shoe or bag and get the original source, prices across sites, whether it's available in the US, and three to five cheaper lookalikes.</p>
+          <p class="stack">Testing with a small group of friends</p>
+        </li>
+
+        <!-- TEMPLATE for Redline or anything new. Copy this block, fill it in, remove the comment marks.
+        <li>
+          <div class="work-head">
+            <h3>Project name</h3>
+            <span class="status">Building</span>
+          </div>
+          <p>What it does, in one or two plain sentences.</p>
+          <p class="stack">Tools used</p>
+          <p class="links"><a href="https://github.com/Ananyapkumar/REPO">Code</a></p>
+        </li>
+        -->
+
+      </ul>
+    </section>
+
+    <section id="writing">
+      <h2>Writing</h2>
+      <p class="section-note">A new post every week on AI, automation and building software.</p>
+      <ul class="post-list" id="posts-tech"></ul>
+    </section>
+
+    <section class="interests" id="health">
+      <h2>Running, health and sport</h2>
+      <p>I run, play sport and track more of it than is probably necessary. Once a month I write up how training and health are going: what's working, what isn't, and the numbers behind it.</p>
+      <!-- Optional: add your Strava link here, e.g. <p class="links"><a href="https://www.strava.com/athletes/YOUR-ID">Strava</a></p> -->
+      <h3 class="list-head">Monthly health log</h3>
+      <ul class="post-list" id="posts-health"></ul>
+    </section>
+
+    <section class="contact" id="contact">
+      <h2>Say hello</h2>
+      <a class="email" href="mailto:work@byananya.com">work@byananya.com</a>
+      <div class="links">
+                <a href="https://www.linkedin.com/in/ananyapkumar" rel="noopener">LinkedIn</a>
+        <a href="https://github.com/Ananyapkumar" rel="noopener">GitHub</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-foot">© 2026 Ananya P Kumar</footer>
+</div>
+
+<script>
+// Photo: shown as a background (not a normal image), with right-click, drag and long-press blocked.
+(function () {
+  var el = document.getElementById('photo');
+  var src = 'assets/photo.jpg';
+  var probe = new Image();
+  probe.onload = function () {
+    el.style.backgroundImage = 'url(' + src + ')';
+    el.classList.add('has-photo');
+  };
+  probe.src = src;
+  ['contextmenu', 'dragstart', 'mousedown'].forEach(function (evt) {
+    el.addEventListener(evt, function (e) { e.preventDefault(); });
+  });
+})();
+
+// Writing lists, read from posts/index.json and split by topic ("tech" or "health")
+(function () {
+  var lists = { tech: document.getElementById('posts-tech'), health: document.getElementById('posts-health') };
+  var empty = { tech: 'First post coming soon.', health: 'The first monthly update is on its way.' };
+  function render(list, posts, emptyMsg) {
+    if (!posts.length) { list.outerHTML = '<p class="empty">' + emptyMsg + '</p>'; return; }
+    list.innerHTML = posts.map(function (p) {
+      var d = new Date(p.date + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+      return '<li><a href="post.html?p=' + encodeURIComponent(p.slug) + '">' +
+        '<span><span class="t">' + p.title + '</span>' +
+        (p.summary ? '<span class="summary">' + p.summary + '</span>' : '') +
+        '</span><time datetime="' + p.date + '">' + d + '</time></a></li>';
+    }).join('');
+  }
+  fetch('posts/index.json')
+    .then(function (r) { return r.json(); })
+    .then(function (posts) {
+      posts.sort(function (a, b) { return b.date.localeCompare(a.date); });
+      Object.keys(lists).forEach(function (k) {
+        render(lists[k], posts.filter(function (p) { return (p.topic || 'tech') === k; }), empty[k]);
+      });
+    })
+    .catch(function () {
+      Object.keys(lists).forEach(function (k) { lists[k].outerHTML = '<p class="empty">Posts couldn’t load. Refresh to try again.</p>'; });
+    });
+})();
+</script>
+</body>
+</html>

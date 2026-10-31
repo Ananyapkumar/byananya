@@ -1,0 +1,147 @@
+:root {
+  --bg: #edeff3;
+  --ink: #18213a;
+  --muted: #5b6478;
+  --rule: #cdd2dd;
+  --accent: #3a4bff;
+  --photo-bg: #d9dde8;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #10141f;
+    --ink: #e8ebf2;
+    --muted: #98a1b5;
+    --rule: #262d40;
+    --accent: #8c98ff;
+    --photo-bg: #1d2333;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; text-decoration-color: var(--accent); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+a:hover { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+
+.wrap { max-width: 46rem; margin: 0 auto; padding: 0 1.5rem; }
+
+/* header */
+.site-head { display: flex; justify-content: space-between; align-items: baseline; padding: 2rem 0; }
+.wordmark { font-weight: 700; text-decoration: none; letter-spacing: -0.02em; }
+.site-head nav { display: flex; gap: 1.5rem; font-size: 0.95rem; }
+.site-head nav a { text-decoration: none; color: var(--muted); }
+.site-head nav a:hover { color: var(--ink); }
+
+/* hero */
+.hero { padding: 4rem 0 1rem; }
+.hero-top { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem; }
+.photo {
+  width: 88px; height: 88px; flex: none; border-radius: 50%;
+  background: var(--photo-bg) center / cover no-repeat;
+  position: relative; overflow: hidden;
+  display: grid; place-items: center;
+  font-weight: 700; font-size: 2rem; color: var(--muted);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+}
+.photo::after { content: ""; position: absolute; inset: 0; } /* blocks direct interaction with the image */
+.photo.has-photo span { display: none; }
+
+h1 {
+  font-size: clamp(2.75rem, 8vw, 4.75rem);
+  font-weight: 800; line-height: 0.95; letter-spacing: -0.045em;
+}
+.statement {
+  font-size: clamp(1.35rem, 3.2vw, 1.75rem);
+  line-height: 1.35; letter-spacing: -0.015em; font-weight: 500;
+  max-width: 34ch;
+}
+.sub { color: var(--muted); margin-top: 1rem; max-width: 52ch; }
+
+/* the route line */
+.route { width: 100%; height: auto; display: block; margin: 2.5rem 0 0; overflow: visible; }
+.route path {
+  fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 1; stroke-dashoffset: 1;
+  animation: draw 2.4s cubic-bezier(.6,.05,.3,1) .3s forwards;
+}
+.route circle { fill: var(--accent); opacity: 0; animation: pop .3s ease-out 2.6s forwards; }
+.route .start { fill: var(--bg); stroke: var(--accent); stroke-width: 2.5; opacity: 1; animation: none; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes pop { to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .route path { animation: none; stroke-dashoffset: 0; }
+  .route circle { animation: none; opacity: 1; }
+}
+
+/* sections */
+section { padding: 4.5rem 0 0; }
+h2 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 1.5rem; }
+
+.work-list, .post-list { list-style: none; border-top: 1px solid var(--rule); }
+.work-list li, .post-list li { border-bottom: 1px solid var(--rule); padding: 1.5rem 0; }
+.work-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
+.work-head h3 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; }
+.status { font-size: 0.875rem; color: var(--muted); white-space: nowrap; }
+.status.live::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); margin-right: 0.45rem; vertical-align: 1px; }
+.work-list p { margin-top: 0.5rem; max-width: 60ch; }
+.work-list .links { display: flex; gap: 1.25rem; font-size: 0.95rem; font-weight: 600; }
+.stack { margin-top: 0.6rem; font-size: 0.9rem; color: var(--muted); }
+
+.post-list a { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; text-decoration: none; }
+.post-list .t { font-weight: 600; font-size: 1.1rem; }
+.post-list a:hover .t { color: var(--accent); }
+.post-list time { font-size: 0.9rem; color: var(--muted); white-space: nowrap; }
+.post-list .summary { display: block; color: var(--muted); font-size: 0.95rem; margin-top: 0.25rem; max-width: 60ch; }
+.section-note { color: var(--muted); margin: -0.75rem 0 1.5rem; }
+.list-head { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.01em; margin: 2.5rem 0 1rem; }
+.interests .links { display: flex; gap: 1.25rem; margin-top: 1rem; font-weight: 600; }
+.empty { color: var(--muted); }
+
+.interests p { max-width: 58ch; font-size: 1.15rem; }
+
+.contact .email {
+  display: inline-block; font-size: clamp(1.6rem, 5vw, 2.4rem); font-weight: 700; letter-spacing: -0.03em;
+  text-decoration: none; border-bottom: 3px solid var(--accent); line-height: 1.2;
+}
+.contact .links { display: flex; gap: 1.5rem; margin-top: 1.5rem; }
+
+.site-foot { padding: 5rem 0 3rem; color: var(--muted); font-size: 0.875rem; }
+
+/* post page */
+.post { padding: 3rem 0 0; }
+.post .back { font-size: 0.95rem; color: var(--muted); text-decoration: none; }
+.post header { margin: 2rem 0 2.5rem; }
+.post h1 { font-size: clamp(2.2rem, 6vw, 3.4rem); line-height: 1.05; }
+.post .meta { color: var(--muted); margin-top: 1rem; font-size: 0.95rem; }
+.prose { max-width: 62ch; font-size: 1.1rem; line-height: 1.7; }
+.prose > * + * { margin-top: 1.1em; }
+.prose h2 { font-size: 1.45rem; margin: 2.2em 0 0; }
+.prose h3 { font-size: 1.2rem; margin-top: 1.8em; }
+.prose ul, .prose ol { padding-left: 1.3em; }
+.prose li + li { margin-top: 0.35em; }
+.prose code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.9em; background: var(--photo-bg); padding: 0.1em 0.35em; border-radius: 4px; }
+.prose pre { background: var(--photo-bg); padding: 1rem 1.2rem; border-radius: 8px; overflow-x: auto; }
+.prose pre code { background: none; padding: 0; }
+.prose blockquote { border-left: 3px solid var(--accent); padding-left: 1rem; color: var(--muted); }
+.prose img { max-width: 100%; border-radius: 8px; }
+
+@media (max-width: 560px) {
+  .site-head nav { gap: 1rem; }
+  .hero { padding-top: 2rem; }
+  .photo { width: 72px; height: 72px; }
+  .post-list a { flex-direction: column; gap: 0.15rem; }
+}
