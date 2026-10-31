@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Say it better | by ananya</title>
-<meta name="description" content="Paste the message you're stuck replying to. Get three ways to answer: polite, firm and funny.">
+<meta name="description" content="Say it the messy way and get it back four ways: polite, firm, funny and very British.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='40' fill='%239a6b1f'/%3E%3C/svg%3E">
 <script>try { var t = localStorage.getItem('theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,6 +21,9 @@
   .field label, .field .lbl { display: block; font-weight: 700; font-size: .92rem; margin-bottom: .6rem; }
   textarea { width: 100%; min-height: 8.5rem; resize: vertical; font: inherit; font-size: 1.05rem; line-height: 1.55; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 1rem 1.1rem; }
   textarea:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .modes { display: inline-flex; gap: .25rem; padding: .3rem; margin-top: 2rem; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; }
+  .modes button { font: inherit; font-weight: 700; font-size: .92rem; padding: .55rem 1.1rem; border-radius: 999px; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+  .modes button[aria-selected="true"] { background: var(--ink); color: var(--bg); }
   .box { position: relative; }
   .box textarea { padding-right: 4.25rem; }
   .mic { position: absolute; right: .75rem; bottom: .9rem; width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--line); background: var(--bg); color: var(--ink); display: grid; place-items: center; cursor: pointer; transition: transform .15s ease; }
@@ -40,7 +43,8 @@
   .hint { font-size: .85rem; color: var(--muted); }
   .replies { display: grid; gap: 1rem; margin-top: 2.5rem; }
   .reply { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 1.25rem 1.3rem 1.1rem; animation: pop .45s cubic-bezier(.2,.8,.2,1) both; }
-  .reply:nth-child(2) { animation-delay: .08s; } .reply:nth-child(3) { animation-delay: .16s; }
+  .reply:nth-child(2) { animation-delay: .08s; } .reply:nth-child(3) { animation-delay: .16s; } .reply:nth-child(4) { animation-delay: .24s; }
+  .reply.brit { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
   @keyframes pop { from { opacity: 0; transform: translateY(14px); } }
   .reply .tone { font-size: .8rem; font-weight: 800; color: var(--accent); }
   .reply p { font-size: 1.08rem; margin-top: .4rem; white-space: pre-wrap; }
@@ -57,12 +61,17 @@
   <div class="bar"><a class="wordmark" href="/">byananya<span>.</span></a><a class="btn line" href="/#work">More work</a></div>
 
   <h1>Say it <span>better.</span></h1>
-  <p class="lede">Stuck on a reply? Type, paste or just say their message, and get three ways to answer: polite, firm and funny.</p>
+  <p class="lede">Say it the messy way, or paste a message you need to answer. Get it back four ways: polite, firm, funny, and very British.</p>
+
+  <div class="modes" role="tablist" aria-label="What do you need?">
+    <button role="tab" aria-selected="true" data-mode="rephrase">Say what I mean</button>
+    <button role="tab" aria-selected="false" data-mode="reply">Reply to a message</button>
+  </div>
 
   <div class="field">
-    <label for="msg">Their message</label>
+    <label for="msg" id="msg-label">What you want to say</label>
     <div class="box">
-      <textarea id="msg" placeholder="Type it, paste it, or tap the mic and just say it."></textarea>
+      <textarea id="msg" placeholder="Say it the messy way. Example: my boss keeps messaging me after 9pm and I hate it"></textarea>
       <button class="mic" id="mic" type="button" aria-label="Speak your message" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"/></svg>
       </button>
@@ -71,7 +80,7 @@
   </div>
 
   <div class="field">
-    <span class="lbl" id="who-l">Who's it from?</span>
+    <span class="lbl" id="who-l">Who's it for?</span>
     <div class="chips" role="group" aria-labelledby="who-l" data-group="who">
       <button aria-pressed="false">Crush</button><button aria-pressed="false">Partner</button><button aria-pressed="false">Ex</button><button aria-pressed="false">Friend</button><button aria-pressed="false">Family</button><button aria-pressed="false">Distant relative</button><button aria-pressed="false">Boss</button><button aria-pressed="false">Client</button><button aria-pressed="false">Landlord</button><button aria-pressed="false">Someone new</button>
     </div>
@@ -100,13 +109,13 @@
   var API = 'https://ananya1234.app.n8n.cloud/webhook/say-it-better';
   var msg = document.getElementById('msg'), out = document.getElementById('out'), go = document.getElementById('go');
   var EXAMPLES = [
-    { m: "Hey! Any chance you could look over my pitch deck this weekend? It's only like 40 slides 🙏", who: 'Friend', want: 'Say no' },
-    { m: "Hi, just letting you know the rent is going up by ₹3,000 from next month.", who: 'Landlord', want: 'Push back' },
-    { m: "Loved the work! Can we quickly add three more pages? Should be small.", who: 'Client', want: 'Get paid' },
-    { m: "Can you jump on a quick call at 9pm tonight?", who: 'Boss', want: 'Set a boundary' },
-    { m: "hey stranger, been thinking about you lately", who: 'Ex', want: 'Keep my distance' },
-    { m: "ok but are you free this saturday or are you going to pretend you're busy again", who: 'Crush', want: 'Flirt back' },
-    { m: "Beta, when are you getting married? Everyone is asking.", who: 'Distant relative', want: 'Keep it friendly' }
+    { mode: 'rephrase', m: "i hate it when people are annoying in meetings and keep talking over me", who: 'Boss', want: 'Set a boundary' },
+    { mode: 'reply', m: "Hey! Any chance you could look over my pitch deck this weekend? It's only like 40 slides 🙏", who: 'Friend', want: 'Say no' },
+    { mode: 'rephrase', m: "you still haven't paid me for last month's work and it's been 3 weeks", who: 'Client', want: 'Get paid' },
+    { mode: 'reply', m: "Beta, when are you getting married? Everyone is asking.", who: 'Distant relative', want: 'Keep it friendly' },
+    { mode: 'rephrase', m: "i want to ask him out but not make it weird", who: 'Crush', want: 'Flirt back' },
+    { mode: 'reply', m: "hey stranger, been thinking about you lately", who: 'Ex', want: 'Keep my distance' },
+    { mode: 'reply', m: "Hi, just letting you know the rent is going up by ₹3,000 from next month.", who: 'Landlord', want: 'Push back' }
   ], ex = 0;
 
   document.querySelectorAll('.chips').forEach(function (g) {
@@ -117,11 +126,20 @@
       b.setAttribute('aria-pressed', on ? 'false' : 'true');
     });
   });
+  var mode = 'rephrase', label = document.getElementById('msg-label'), whoL = document.getElementById('who-l');
+  function setMode(m) {
+    mode = m;
+    document.querySelectorAll('.modes button').forEach(function (b) { b.setAttribute('aria-selected', b.dataset.mode === m ? 'true' : 'false'); });
+    label.textContent = m === 'reply' ? 'Their message' : 'What you want to say';
+    whoL.textContent = m === 'reply' ? "Who's it from?" : "Who's it for?";
+    msg.placeholder = m === 'reply' ? 'Paste the message you need to answer, or tap the mic and read it out.' : 'Say it the messy way. Example: my boss keeps messaging me after 9pm and I hate it';
+  }
+  document.querySelectorAll('.modes button').forEach(function (b) { b.addEventListener('click', function () { setMode(b.dataset.mode); }); });
   function pick(group) { var b = document.querySelector('[data-group="' + group + '"] [aria-pressed="true"]'); return b ? b.textContent : ''; }
   function setPick(group, label) { document.querySelectorAll('[data-group="' + group + '"] button').forEach(function (b) { b.setAttribute('aria-pressed', b.textContent === label ? 'true' : 'false'); }); }
 
   document.getElementById('example').addEventListener('click', function () {
-    var e = EXAMPLES[ex++ % EXAMPLES.length]; msg.value = e.m; setPick('who', e.who); setPick('want', e.want); msg.focus();
+    var e = EXAMPLES[ex++ % EXAMPLES.length]; setMode(e.mode); msg.value = e.m; setPick('who', e.who); setPick('want', e.want); msg.focus();
   });
   msg.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); run(); } });
   go.addEventListener('click', run);
@@ -131,21 +149,21 @@
 
   async function run() {
     var text = msg.value.trim();
-    if (!text) { msg.focus(); note('Paste the message you need to reply to first.'); return; }
+    if (!text) { msg.focus(); note(mode === 'reply' ? 'Paste the message you need to answer first.' : 'Tell me what you want to say first.'); return; }
     if (go.disabled) return;
     go.disabled = true;
     var steps = ['Reading the room…', 'Finding the right words…', 'Polishing the replies…', 'Almost there…'], si = 0;
     go.textContent = steps[0];
     var tick = setInterval(function () { si = Math.min(si + 1, steps.length - 1); go.textContent = steps[si]; }, 2500);
-    out.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
+    out.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
     var ctrl = new AbortController(), timer = setTimeout(function () { ctrl.abort(); }, 30000);
     try {
       var r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, signal: ctrl.signal,
-        body: JSON.stringify({ message: text.slice(0, 1500), who: pick('who'), want: pick('want') }) });
+        body: JSON.stringify({ message: text.slice(0, 1500), who: pick('who'), want: pick('want'), mode: mode }) });
       var res = await r.json().catch(function () { return {}; });
       if (!res.ok) throw new Error(res.error || 'failed');
-      out.innerHTML = [['Polite', res.polite], ['Firm', res.firm], ['Funny', res.funny]].map(function (x) {
-        return '<div class="reply"><span class="tone">' + x[0] + '</span><p>' + esc(x[1] || '') + '</p><button class="copy">Copy</button></div>';
+      out.innerHTML = [['Polite', res.polite], ['Firm', res.firm], ['Funny', res.funny], ['Very British', res.british]].filter(function (x) { return x[1]; }).map(function (x) {
+        return '<div class="reply' + (x[0] === 'Very British' ? ' brit' : '') + '"><span class="tone">' + (x[0] === 'Very British' ? '🫖 ' : '') + x[0] + '</span><p>' + esc(x[1] || '') + '</p><button class="copy">Copy</button></div>';
       }).join('');
     } catch (e) {
       note(e.name === 'AbortError' ? 'That took too long. Try once more.' : e.message === 'busy' ? 'Lots of people are using this right now. Give it a minute and try again.' : 'Something went wrong on my side. Try again in a moment.');
