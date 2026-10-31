@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Writing | Ananya P Kumar</title>
+<title>Blog | Ananya P Kumar</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%233a4bff'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <script src="assets/marked.min.js"></script>
 </head>
@@ -17,13 +17,13 @@
     <a class="wordmark" href="/">byananya</a>
     <nav>
       <a href="/#work">Work</a>
-      <a href="/#writing">Writing</a>
+      <a href="/#blog">Blog</a>
       <a href="/#contact">Contact</a>
     </nav>
   </header>
 
   <main class="post">
-    <a class="back" href="/#writing">All writing</a>
+    <a class="back" href="/#blog">All posts</a>
     <header>
       <h1 id="title">Loading</h1>
       <p class="meta" id="meta"></p>
@@ -41,7 +41,7 @@
   var meta = document.getElementById('meta');
   var body = document.getElementById('body');
 
-  function fail(msg) { title.textContent = 'Post not found'; meta.textContent = ''; body.innerHTML = '<p>' + msg + ' <a href="/#writing">See all writing</a>.</p>'; }
+  function fail(msg) { title.textContent = 'Post not found'; meta.textContent = ''; body.innerHTML = '<p>' + msg + ' <a href="/#blog">See all posts</a>.</p>'; }
   if (!slug) return fail('This link is missing the post name.');
 
   fetch('posts/index.json')
