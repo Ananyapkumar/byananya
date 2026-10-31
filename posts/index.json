@@ -4,6 +4,7 @@
     "title": "Setting up a work email on my own domain",
     "date": "2026-10-31",
     "summary": "Namecheap forwarding, Gmail’s Send-as, and one deliverability check.",
-    "topic": "tech"
+    "topic": "tech",
+    "cover": "assets/covers/work-email.jpg"
   }
 ]
