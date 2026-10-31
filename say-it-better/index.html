@@ -21,6 +21,16 @@
   .field label, .field .lbl { display: block; font-weight: 700; font-size: .92rem; margin-bottom: .6rem; }
   textarea { width: 100%; min-height: 8.5rem; resize: vertical; font: inherit; font-size: 1.05rem; line-height: 1.55; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 1rem 1.1rem; }
   textarea:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .box { position: relative; }
+  .box textarea { padding-right: 4.25rem; }
+  .mic { position: absolute; right: .75rem; bottom: .9rem; width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--line); background: var(--bg); color: var(--ink); display: grid; place-items: center; cursor: pointer; transition: transform .15s ease; }
+  .mic:hover { transform: scale(1.06); }
+  .mic svg { width: 20px; height: 20px; }
+  .mic.on { background: var(--accent); border-color: var(--accent); color: var(--bg); animation: ring 1.4s infinite; }
+  @keyframes ring { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); } 100% { box-shadow: 0 0 0 16px transparent; } }
+  .listening { margin-top: .6rem; font-size: .88rem; font-weight: 600; color: var(--accent); }
+  .listening span { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-right: .5rem; animation: pulse 1s infinite; }
+  @media (prefers-reduced-motion: reduce) { .mic.on, .listening span { animation: none; } }
   .chips { display: flex; flex-wrap: wrap; gap: .5rem; }
   .chips button { font: inherit; font-size: .9rem; font-weight: 600; padding: .5rem 1rem; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer; }
   .chips button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
@@ -47,11 +57,17 @@
   <div class="bar"><a class="wordmark" href="/">byananya<span>.</span></a><a class="btn line" href="/#work">More work</a></div>
 
   <h1>Say it <span>better.</span></h1>
-  <p class="lede">Stuck on a reply? Paste their message and get three ways to answer: polite, firm and funny.</p>
+  <p class="lede">Stuck on a reply? Type, paste or just say their message, and get three ways to answer: polite, firm and funny.</p>
 
   <div class="field">
     <label for="msg">Their message</label>
-    <textarea id="msg" placeholder="Hey, just letting you know the rent is going up by ₹3,000 from next month."></textarea>
+    <div class="box">
+      <textarea id="msg" placeholder="Type it, paste it, or tap the mic and just say it."></textarea>
+      <button class="mic" id="mic" type="button" aria-label="Speak your message" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"/></svg>
+      </button>
+    </div>
+    <p class="listening" id="listening" hidden><span></span>Listening… tap the mic when you're done</p>
   </div>
 
   <div class="field">
@@ -135,6 +151,35 @@
       note(e.name === 'AbortError' ? 'That took too long. Try once more.' : e.message === 'busy' ? 'Lots of people are using this right now. Give it a minute and try again.' : 'Something went wrong on my side. Try again in a moment.');
     } finally { clearInterval(tick); clearTimeout(timer); go.disabled = false; go.textContent = 'Say it better'; }
   }
+
+  // Voice input: speak the message, it's transcribed, then sent automatically
+  (function () {
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    var mic = document.getElementById('mic'), hint = document.getElementById('listening');
+    if (!SR) return;
+    mic.hidden = false;
+    var rec = null, base = '', heard = '';
+    function stop() { if (rec) rec.stop(); }
+    mic.addEventListener('click', function () {
+      if (rec) { stop(); return; }
+      rec = new SR();
+      rec.lang = navigator.language || 'en-IN';
+      rec.interimResults = true; rec.continuous = true;
+      base = msg.value.trim() ? msg.value.trim() + ' ' : ''; heard = '';
+      rec.onresult = function (e) {
+        var fin = '', interim = '';
+        for (var i = 0; i < e.results.length; i++) { (e.results[i].isFinal ? (fin += e.results[i][0].transcript) : (interim += e.results[i][0].transcript)); }
+        heard = (fin + interim).trim(); msg.value = base + heard;
+      };
+      rec.onerror = function (e) { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') note('Allow microphone access in your browser to use voice.'); };
+      rec.onend = function () {
+        rec = null; mic.classList.remove('on'); mic.setAttribute('aria-label', 'Speak your message'); hint.hidden = true;
+        if (heard) run();
+      };
+      rec.start();
+      mic.classList.add('on'); mic.setAttribute('aria-label', 'Stop listening'); hint.hidden = false;
+    });
+  })();
 
   out.addEventListener('click', function (e) {
     var b = e.target.closest('.copy'); if (!b) return;
