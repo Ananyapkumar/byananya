@@ -50,7 +50,7 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-
 .hero { padding: 4rem 0 1rem; }
 .hero-top { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem; }
 .photo {
-  width: 88px; height: 88px; flex: none; border-radius: 50%;
+  width: 112px; height: 112px; flex: none; border-radius: 50%;
   background: var(--photo-bg) center / cover no-repeat;
   position: relative; overflow: hidden;
   display: grid; place-items: center;
@@ -112,6 +112,12 @@ h2 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.03em; margin-botto
 .empty { color: var(--muted); }
 
 .interests p { max-width: 58ch; font-size: 1.15rem; }
+.outdoor-photo {
+  aspect-ratio: 640 / 425; width: 100%; border-radius: 14px; margin-bottom: 1.75rem;
+  background: var(--photo-bg) center / cover no-repeat; position: relative; overflow: hidden;
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+}
+.outdoor-photo::after { content: ""; position: absolute; inset: 0; }
 
 .contact .email {
   display: inline-block; font-size: clamp(1.6rem, 5vw, 2.4rem); font-weight: 700; letter-spacing: -0.03em;
@@ -142,6 +148,7 @@ h2 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.03em; margin-botto
 @media (max-width: 560px) {
   .site-head nav { gap: 1rem; }
   .hero { padding-top: 2rem; }
-  .photo { width: 72px; height: 72px; }
+  .hero-top { flex-direction: column; align-items: flex-start; gap: 1.25rem; }
+  .photo { width: 120px; height: 120px; }
   .post-list a { flex-direction: column; gap: 0.15rem; }
 }
