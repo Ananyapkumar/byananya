@@ -69,7 +69,7 @@ Write a blog post about it like news with my opinion: what it is, what it does, 
 }
 
 async function gemini(env, body) {
-  let last = '';
+  let last = '', busy = false;
   for (const model of MODELS) {
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_KEY }, body: JSON.stringify(body)
@@ -78,8 +78,9 @@ async function gemini(env, body) {
     const t = await r.text();
     last = model + ' ' + r.status + ': ' + t.slice(0, 300);
     if (/API_KEY_INVALID|PERMISSION_DENIED|API key not valid/i.test(t)) throw new Error('Gemini rejected the key. Check the GEMINI_KEY secret. (' + last + ')');
-    if (r.status === 429) throw new Error('Gemini is busy or out of free quota for now (' + last + ')');
+    if (r.status === 429) { busy = true; continue; } // this model has no free quota left: try the next one
   }
+  if (busy) throw new Error('Gemini is out of free quota on every model for now. It will try again tomorrow. (' + last + ')');
   throw new Error('No Gemini model worked. Last reply: ' + last);
 }
 
