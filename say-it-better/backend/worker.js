@@ -28,6 +28,7 @@ function buildPrompt(text, who, want, mode) {
     : 'This is what I want to say, in my own rough words:\n"""' + text + '"""\n' + whoLine + wantLine +
       'Rewrite it into four versions I could actually send. Keep my meaning and point of view: I am the one saying this. Do not reply to me, comfort me, or ask me questions.';
   return task + '\nRules: write as me, like a real person texting; each under 45 words; never robotic or corporate; never ask me what happened; no "I hope this message finds you well".\n' +
+    'Only use facts that are in the message. Never invent excuses, reasons or details I did not give (for example "my phone was on silent", "I was asleep", "I was busy with work"). If an excuse would help, leave it out rather than make one up.\n' +
     'polite = kind and gracious; firm = clear and confident, not rude; funny = light and witty, never mean, at most one emoji; ' +
     'british = peak polite British office energy like those viral reels: understated, terribly courteous, gently passive-aggressive ("I\'m terribly sorry, but...", "just circling back", "not to be a bother", "as per my previous message"), funny but never offensive. ' +
     'For a crush or partner, playful and sweet is fine but keep it tasteful. Use the language of the original. Return only JSON: {"polite": "...", "firm": "...", "funny": "...", "british": "..."}';
