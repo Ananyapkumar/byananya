@@ -55,62 +55,19 @@
   </section>
 
   <section class="block" id="work" aria-labelledby="work-h">
-    <div class="sec-head"><h2 id="work-h">Work<span>.</span></h2><p>Things I've built, what they do, and what I learned building them.</p></div>
+    <div class="sec-head"><h2 id="work-h">Work<span>.</span></h2><p>Swipe through what I've built. Tap any project for the full story.</p></div>
     <div class="filters" role="group" aria-label="Filter projects">
       <button aria-pressed="true" data-f="all">Show all</button><button aria-pressed="false" data-f="ai">AI</button><button aria-pressed="false" data-f="automation">Automation</button><button aria-pressed="false" data-f="data">Data</button>
     </div>
     <p class="count" id="count">Showing 6 of 6 projects</p>
 
-    <article class="case rv" data-cat="ai">
-      <div class="case-top"><div><h3><b>Clause.</b> <span class="rest">Teaching AI which number on a datasheet is the right one.</span></h3><ul class="tags"><li>#AI</li><li>#Evaluation</li><li>#API</li></ul></div><span class="status live">Live API</span></div>
-      <div class="fly stage top" style="background-image:url(assets/work/clause.jpg)">
-        <div class="big-stat">99.4%<small>field accuracy</small></div>
-        <div class="prompt"><span class="txt"><span class="typed" data-text="Extract the system wattage from datasheet e16…"></span></span><span class="go"><i></i><i></i><i></i></span></div>
+    <div class="carousel">
+      <div class="track" id="track">
+    <article class="slide case" tabindex="0" role="button" aria-label="Open the Say it better case study" data-cat="ai">
+      <div class="stage top" style="background-image:url(assets/work/say-it-better.jpg)">
       </div>
-      <div class="case-body">
-        <dl class="facts-list">
-          <div><dt>Type</dt><dd>AI extraction service</dd></div>
-          <div><dt>Year</dt><dd>2026</dd></div>
-          <div><dt>Role</dt><dd>Solo builder</dd></div>
-          <div><dt>Outcome</dt><dd class="outcome">161 of 162 fields right, with the score predicted before the run.</dd></div>
-          <div><dd><a href="https://github.com/Ananyapkumar/clause" rel="noopener">Code</a> &nbsp; <a href="https://clause-9kq9.onrender.com/docs" rel="noopener">Try the API</a></dd></div>
-        </dl>
-        <ul class="points">
-          <li><h4>Domain rules, not parsing.</h4><p>Datasheets print two plausible numbers for the same question. Knowing which one is right is the real work.</p></li>
-          <li><h4>Measured, not guessed.</h4><p>Hand-written ground truth, measured run-to-run variance, and a prediction committed before the baseline.</p></li>
-          <li><h4>Built, tested, removed.</h4><p>Citations, retrieval and a verification pass were each measured, then cut when the numbers didn't justify them.</p></li>
-          <li><h4>Production basics.</h4><p>Auth, rate limits, request IDs and a 15-check API test suite.</p></li>
-        </ul>
-      </div>
-    </article>
-
-    <article class="case rv" data-cat="ai automation">
-      <div class="case-top"><div><h3><b>agent-contract.</b> <span class="rest">Catching AI agents that fail politely.</span></h3><ul class="tags"><li>#AI</li><li>#n8n</li><li>#OpenSource</li></ul></div><span class="status live">v0.3, open source</span></div>
-      <div class="fly stage" style="background-image:url(assets/work/agent-contract.jpg)">
-        <div class="prompt"><span class="txt"><span class="typed" data-text="Use the calculator tool. Do not calculate it yourself."></span></span><span class="go"><i></i><i></i><i></i></span></div>
-      </div>
-      <div class="case-body">
-        <dl class="facts-list">
-          <div><dt>Type</dt><dd>n8n Code node, open source</dd></div>
-          <div><dt>Year</dt><dd>2026</dd></div>
-          <div><dt>Role</dt><dd>Solo builder</dd></div>
-          <div><dt>Outcome</dt><dd class="outcome">Nine checks, 14 test fixtures, verified in a live n8n workflow.</dd></div>
-          <div><dd><a href="https://github.com/Ananyapkumar/agent-contract" rel="noopener">Code</a></dd></div>
-        </dl>
-        <ul class="points">
-          <li><h4>Green isn't working.</h4><p>n8n marks an AI node successful if it doesn't crash. A model always returns text, so failures look like success.</p></li>
-          <li><h4>Phantom tool calls.</h4><p>Flags agents that answer without calling the tool they were told to use.</p></li>
-          <li><h4>No AI checking AI.</h4><p>Plain string and JSON checks: offline, instant, free, and the same verdict every time.</p></li>
-          <li><h4>Shaped by the community.</h4><p>Two features came straight from feedback in the n8n community.</p></li>
-        </ul>
-      </div>
-    </article>
-
-    <article class="case rv" data-cat="ai">
       <div class="case-top"><div><h3><b>Say it better.</b> <span class="rest">Say it the messy way, get it back four ways.</span></h3><ul class="tags"><li>#AI</li><li>#n8n</li><li>#Everyday</li></ul></div><span class="status live">Live</span></div>
-      <div class="fly stage g2">
-        <div class="prompt"><span class="txt"><span class="typed" data-text="My landlord wants ₹3,000 more. Help me push back nicely…"></span></span><span class="go"><i></i><i></i><i></i></span></div>
-      </div>
+      <span class="slide-cta">See the story</span>
       <div class="case-body">
         <dl class="facts-list">
           <div><dt>Type</dt><dd>Tiny AI web app</dd></div>
@@ -127,12 +84,57 @@
         </ul>
       </div>
     </article>
-
-    <article class="case rv" data-cat="automation ai">
-      <div class="case-top"><div><h3><b>Founder outreach.</b> <span class="rest">Eight founders researched before breakfast.</span></h3><ul class="tags"><li>#Automation</li><li>#AI</li></ul></div><span class="status live">Running daily</span></div>
-      <div class="fly stage g1">
+    <article class="slide case" tabindex="0" role="button" aria-label="Open the Clause case study" data-cat="ai">
+      <div class="stage top" style="background-image:url(assets/work/clause.jpg)">
+        <div class="big-stat">99.4%<small>field accuracy</small></div>
+        <div class="prompt"><span class="txt"><span class="typed" data-text="Extract the system wattage from datasheet e16…"></span></span><span class="go"><i></i><i></i><i></i></span></div>
+      </div>
+      <div class="case-top"><div><h3><b>Clause.</b> <span class="rest">Teaching AI which number on a datasheet is the right one.</span></h3><ul class="tags"><li>#AI</li><li>#Evaluation</li><li>#API</li></ul></div><span class="status live">Live API</span></div>
+      <span class="slide-cta">See the story</span>
+      <div class="case-body">
+        <dl class="facts-list">
+          <div><dt>Type</dt><dd>AI extraction service</dd></div>
+          <div><dt>Year</dt><dd>2026</dd></div>
+          <div><dt>Role</dt><dd>Solo builder</dd></div>
+          <div><dt>Outcome</dt><dd class="outcome">161 of 162 fields right, with the score predicted before the run.</dd></div>
+          <div><dd><a href="https://github.com/Ananyapkumar/clause" rel="noopener">Code</a> &nbsp; <a href="https://clause-9kq9.onrender.com/docs" rel="noopener">Try the API</a></dd></div>
+        </dl>
+        <ul class="points">
+          <li><h4>Domain rules, not parsing.</h4><p>Datasheets print two plausible numbers for the same question. Knowing which one is right is the real work.</p></li>
+          <li><h4>Measured, not guessed.</h4><p>Hand-written ground truth, measured run-to-run variance, and a prediction committed before the baseline.</p></li>
+          <li><h4>Built, tested, removed.</h4><p>Citations, retrieval and a verification pass were each measured, then cut when the numbers didn't justify them.</p></li>
+          <li><h4>Production basics.</h4><p>Auth, rate limits, request IDs and a 15-check API test suite.</p></li>
+        </ul>
+      </div>
+    </article>
+    <article class="slide case" tabindex="0" role="button" aria-label="Open the agent-contract case study" data-cat="ai automation">
+      <div class="stage" style="background-image:url(assets/work/agent-contract.jpg)">
+        <div class="prompt"><span class="txt"><span class="typed" data-text="Use the calculator tool. Do not calculate it yourself."></span></span><span class="go"><i></i><i></i><i></i></span></div>
+      </div>
+      <div class="case-top"><div><h3><b>agent-contract.</b> <span class="rest">Catching AI agents that fail politely.</span></h3><ul class="tags"><li>#AI</li><li>#n8n</li><li>#OpenSource</li></ul></div><span class="status live">v0.3, open source</span></div>
+      <span class="slide-cta">See the story</span>
+      <div class="case-body">
+        <dl class="facts-list">
+          <div><dt>Type</dt><dd>n8n Code node, open source</dd></div>
+          <div><dt>Year</dt><dd>2026</dd></div>
+          <div><dt>Role</dt><dd>Solo builder</dd></div>
+          <div><dt>Outcome</dt><dd class="outcome">Nine checks, 14 test fixtures, verified in a live n8n workflow.</dd></div>
+          <div><dd><a href="https://github.com/Ananyapkumar/agent-contract" rel="noopener">Code</a></dd></div>
+        </dl>
+        <ul class="points">
+          <li><h4>Green isn't working.</h4><p>n8n marks an AI node successful if it doesn't crash. A model always returns text, so failures look like success.</p></li>
+          <li><h4>Phantom tool calls.</h4><p>Flags agents that answer without calling the tool they were told to use.</p></li>
+          <li><h4>No AI checking AI.</h4><p>Plain string and JSON checks: offline, instant, free, and the same verdict every time.</p></li>
+          <li><h4>Shaped by the community.</h4><p>Two features came straight from feedback in the n8n community.</p></li>
+        </ul>
+      </div>
+    </article>
+    <article class="slide case" tabindex="0" role="button" aria-label="Open the Founder outreach case study" data-cat="automation ai">
+      <div class="stage g1">
         <div class="prompt"><span class="txt"><span class="typed" data-text="Find Series A founders in Kerala I haven't contacted yet…"></span></span><span class="go"><i></i><i></i><i></i></span></div>
       </div>
+      <div class="case-top"><div><h3><b>Founder outreach.</b> <span class="rest">Eight founders researched before breakfast.</span></h3><ul class="tags"><li>#Automation</li><li>#AI</li></ul></div><span class="status live">Running daily</span></div>
+      <span class="slide-cta">See the story</span>
       <div class="case-body">
         <dl class="facts-list">
           <div><dt>Type</dt><dd>n8n automation</dd></div>
@@ -148,12 +150,12 @@
         </ul>
       </div>
     </article>
-
-    <article class="case rv" data-cat="ai">
-      <div class="case-top"><div><h3><b>Unni.</b> <span class="rest">Skyscanner, but for clothes.</span></h3><ul class="tags"><li>#AI</li><li>#Product</li></ul></div><span class="status">In development</span></div>
-      <div class="fly stage g2">
+    <article class="slide case" tabindex="0" role="button" aria-label="Open the Unni case study" data-cat="ai">
+      <div class="stage g2">
         <div class="prompt"><span class="txt"><span class="typed" data-text="Find this dress, and three cheaper lookalikes…"></span></span><span class="go"><i></i><i></i><i></i></span></div>
       </div>
+      <div class="case-top"><div><h3><b>Unni.</b> <span class="rest">Skyscanner, but for clothes.</span></h3><ul class="tags"><li>#AI</li><li>#Product</li></ul></div><span class="status">In development</span></div>
+      <span class="slide-cta">See the story</span>
       <div class="case-body">
         <dl class="facts-list">
           <div><dt>Type</dt><dd>AI shopping assistant</dd></div>
@@ -169,12 +171,12 @@
         </ul>
       </div>
     </article>
-
-    <article class="case rv" data-cat="data">
-      <div class="case-top"><div><h3><b>Crypto data pipeline.</b> <span class="rest">Built to survive the bad days.</span></h3><ul class="tags"><li>#Data</li><li>#Pipelines</li></ul></div><span class="status">Complete</span></div>
-      <div class="fly stage g3">
+    <article class="slide case" tabindex="0" role="button" aria-label="Open the Crypto data pipeline case study" data-cat="data">
+      <div class="stage g3">
         <div class="prompt"><span class="txt"><span class="typed" data-text="Run the scheduled ingestion, retry if a step fails…"></span></span><span class="go"><i></i><i></i><i></i></span></div>
       </div>
+      <div class="case-top"><div><h3><b>Crypto data pipeline.</b> <span class="rest">Built to survive the bad days.</span></h3><ul class="tags"><li>#Data</li><li>#Pipelines</li></ul></div><span class="status">Complete</span></div>
+      <span class="slide-cta">See the story</span>
       <div class="case-body">
         <dl class="facts-list">
           <div><dt>Type</dt><dd>Data pipeline</dd></div>
@@ -188,6 +190,19 @@
         </ul>
       </div>
     </article>
+      </div>
+      <div class="car-nav">
+        <div class="dots" id="dots" aria-hidden="true"></div>
+        <div class="arrows">
+          <button class="arrow" id="prev" type="button" aria-label="Previous project"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+          <button class="arrow" id="next" type="button" aria-label="Next project"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button>
+        </div>
+      </div>
+    </div>
+    <dialog class="case-modal" id="case-modal" aria-label="Case study">
+      <button class="modal-close" id="modal-close" type="button" aria-label="Close">×</button>
+      <div class="modal-body" id="modal-body"></div>
+    </dialog>
   </section>
 
   <section class="block" id="about" aria-labelledby="about-h">
@@ -282,17 +297,53 @@ document.querySelectorAll('.protected[data-src]').forEach(function (el) {
   items.forEach(function (el) { io.observe(el); });
 })();
 
-// Project filters
+// Work carousel: arrows, dots, filters, and a pop-up case study
 (function () {
-  var btns = document.querySelectorAll('[data-f]'), cases = document.querySelectorAll('.case'), count = document.getElementById('count');
+  var track = document.getElementById('track'), slides = [].slice.call(track.querySelectorAll('.slide'));
+  var dots = document.getElementById('dots'), count = document.getElementById('count');
+  var modal = document.getElementById('case-modal'), body = document.getElementById('modal-body');
+  var prev = document.getElementById('prev'), next = document.getElementById('next');
+  function visible() { return slides.filter(function (s) { return !s.hidden; }); }
+  function step() { var v = visible()[0]; return v ? v.getBoundingClientRect().width + 20 : 300; }
+  function sync() {
+    var v = visible(), i = Math.min(Math.round(track.scrollLeft / step()), v.length - 1);
+    [].forEach.call(dots.children, function (d, k) { d.classList.toggle('on', k === i); });
+    prev.disabled = track.scrollLeft < 8;
+    next.disabled = track.scrollLeft + track.clientWidth > track.scrollWidth - 8;
+  }
+  function drawDots() { dots.innerHTML = visible().map(function () { return '<i></i>'; }).join(''); sync(); }
+  prev.addEventListener('click', function () { track.scrollBy({ left: -step(), behavior: 'smooth' }); });
+  next.addEventListener('click', function () { track.scrollBy({ left: step(), behavior: 'smooth' }); });
+  track.addEventListener('scroll', function () { requestAnimationFrame(sync); }, { passive: true });
+  addEventListener('resize', sync);
+
+  var btns = document.querySelectorAll('[data-f]');
   btns.forEach(function (b) {
     b.addEventListener('click', function () {
-      var f = b.dataset.f, shown = 0;
+      var f = b.dataset.f;
       btns.forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
-      cases.forEach(function (c) { var ok = f === 'all' || c.dataset.cat.split(' ').indexOf(f) > -1; c.hidden = !ok; if (ok) { shown++; c.classList.add('in'); } });
-      count.textContent = 'Showing ' + shown + ' of ' + cases.length + ' projects';
+      slides.forEach(function (c) { c.hidden = !(f === 'all' || c.dataset.cat.split(' ').indexOf(f) > -1); });
+      count.textContent = 'Showing ' + visible().length + ' of ' + slides.length + ' projects';
+      track.scrollTo({ left: 0 }); drawDots();
     });
   });
+
+  function open(slide) {
+    var stage = slide.querySelector('.stage').cloneNode(true);
+    var typed = stage.querySelector('.typed'); if (typed) typed.textContent = typed.dataset.text;
+    body.innerHTML = slide.querySelector('.case-top').outerHTML + stage.outerHTML + slide.querySelector('.case-body').outerHTML;
+    if (modal.showModal) modal.showModal(); else modal.setAttribute('open', '');
+    document.body.style.overflow = 'hidden';
+  }
+  function close() { if (modal.close) modal.close(); else { modal.removeAttribute('open'); document.body.style.overflow = ''; } }
+  modal.addEventListener('close', function () { document.body.style.overflow = ''; });
+  document.getElementById('modal-close').addEventListener('click', close);
+  modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+  slides.forEach(function (s) {
+    s.addEventListener('click', function (e) { if (e.target.closest('a')) return; open(s); });
+    s.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(s); } });
+  });
+  drawDots();
 })();
 
 // Blog cards with topic filter, read from posts/index.json
