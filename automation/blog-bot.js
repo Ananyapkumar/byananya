@@ -69,15 +69,18 @@ Write a blog post about it like news with my opinion: what it is, what it does, 
 }
 
 async function gemini(env, body) {
+  let last = '';
   for (const model of MODELS) {
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_KEY }, body: JSON.stringify(body)
     });
-    if (r.status === 404 || r.status === 400) continue;
-    if (!r.ok) throw new Error('Gemini error ' + r.status);
-    return r.json();
+    if (r.ok) return r.json();
+    const t = await r.text();
+    last = model + ' ' + r.status + ': ' + t.slice(0, 300);
+    if (/API_KEY_INVALID|PERMISSION_DENIED|API key not valid/i.test(t)) throw new Error('Gemini rejected the key. Check the GEMINI_KEY secret. (' + last + ')');
+    if (r.status === 429) throw new Error('Gemini is busy or out of free quota for now (' + last + ')');
   }
-  throw new Error('No Gemini model available');
+  throw new Error('No Gemini model worked. Last reply: ' + last);
 }
 
 function parsePost(d) {
@@ -223,7 +226,20 @@ export default {
   async scheduled(event, env, ctx) { ctx.waitUntil(daily(env)); },
 
   async fetch(request, env) {
+    try { return await handle(request, env); }
+    catch (e) { return html('<p style="font-family:sans-serif;padding:2rem;max-width:40rem">Something went wrong: ' + esc(e.message) + '</p>', 500); }
+  }
+};
+
+async function handle(request, env) {
     const url = new URL(request.url), k = url.searchParams.get('k') || '';
+    // Setup check: shows which settings exist (never their values)
+    if (url.pathname === '/check') {
+      const rows = [['BLOG storage connection', !!(env.BLOG && env.BLOG.get)], ['GEMINI_KEY', !!env.GEMINI_KEY], ['GITHUB_TOKEN', !!env.GITHUB_TOKEN],
+        ['ADMIN_KEY', !!env.ADMIN_KEY], ['NTFY_TOPIC', !!env.NTFY_TOPIC], ['BASE_URL', !!env.BASE_URL && !String(env.BASE_URL).endsWith('/')]];
+      return html('<div style="font-family:sans-serif;padding:2rem;line-height:2"><h2>Blog bot setup check</h2>' + rows.map(r => (r[1] ? '✅ ' : '❌ ') + r[0]).join('<br>') +
+        '<p style="color:#666">❌ means missing or misnamed. Names must match exactly, in capitals. BASE_URL must not end with a slash.</p></div>');
+    }
     if (!env.ADMIN_KEY || k !== env.ADMIN_KEY) return html('<p style="font-family:sans-serif;padding:2rem">Nothing to see here.</p>', 403);
 
     // Manual triggers for testing: /run (daily job now) and /test?type=health|tech (one draft now)
@@ -259,5 +275,4 @@ export default {
       return html(page(d, k, msg));
     }
     return html(page(d, k));
-  }
-};
+}
