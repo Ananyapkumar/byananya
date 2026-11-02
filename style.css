@@ -226,3 +226,50 @@ section.block { padding-top: 6rem; }
 /* fly-through on scroll */
 .fly { will-change: transform, opacity; transform-origin: 50% 100%; }
 .hero h1 { will-change: transform, opacity; transform-origin: 0 50%; }
+
+/* work carousel */
+.carousel { position: relative; }
+.track { display: flex; gap: 1.25rem; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; padding: .5rem .25rem 1.25rem; margin: 0 -.25rem; scrollbar-width: none; overscroll-behavior-x: contain; }
+.track::-webkit-scrollbar { display: none; }
+.slide.case { flex: 0 0 min(86%, 24rem); scroll-snap-align: start; margin: 0; padding: .9rem .9rem 1.2rem; border-radius: 24px; display: flex; flex-direction: column; cursor: pointer; transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease; }
+.slide.case[hidden] { display: none; }
+.slide.case:hover, .slide.case:focus-visible { transform: translateY(-5px); border-color: var(--accent); box-shadow: var(--shadow); outline: none; }
+.slide .stage { margin-top: 0; aspect-ratio: 16 / 11; border-radius: 16px; }
+.slide .stage .prompt { font-size: .8rem; padding: .55rem .6rem .55rem .9rem; bottom: .9rem; width: 90%; }
+.slide .stage .prompt .go { width: 26px; height: 26px; }
+.slide .stage .big-stat { font-size: 2rem; right: 1rem; top: .9rem; }
+.slide .case-top { margin-top: 1.1rem; padding: 0 .3rem; flex-direction: column-reverse; gap: .6rem; }
+.slide .case-top h3 { font-size: 1.25rem; line-height: 1.25; }
+.slide .tags { margin-top: .6rem; }
+.slide .status { align-self: flex-start; }
+.slide .case-body { display: none; }
+.slide-cta { margin: auto .3rem 0; padding-top: 1.1rem; font-size: .9rem; font-weight: 700; color: var(--accent); }
+.car-nav { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: .5rem; }
+.dots { display: flex; gap: .4rem; }
+.dots i { width: 8px; height: 8px; border-radius: 999px; background: var(--line); transition: width .3s ease, background .3s ease; }
+.dots i.on { width: 26px; background: var(--ink); }
+.arrows { display: flex; gap: .5rem; }
+.arrow { width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--ink); display: grid; place-items: center; cursor: pointer; transition: transform .15s ease, border-color .15s ease; }
+.arrow:hover:not(:disabled) { border-color: var(--ink); transform: scale(1.05); }
+.arrow:disabled { opacity: .35; cursor: default; }
+.arrow svg { width: 20px; height: 20px; }
+
+/* case study pop-up */
+.case-modal { max-width: none; width: min(60rem, calc(100% - 1.5rem)); max-height: calc(100vh - 3rem); margin: auto; padding: 0; border: 1px solid var(--line); border-radius: 28px; background: var(--surface); color: var(--ink); box-shadow: 0 40px 120px -40px rgba(0,0,0,.6); overflow: hidden; }
+.case-modal[open] { display: flex; flex-direction: column; animation: rise .35s cubic-bezier(.2,.8,.2,1); }
+.case-modal::backdrop { background: rgba(10,11,14,.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+@keyframes rise { from { opacity: 0; transform: translateY(24px) scale(.98); } }
+.modal-body { overflow-y: auto; padding: clamp(1.25rem, 3.5vw, 2.25rem); }
+.modal-body .case-top { padding-right: 3rem; }
+.modal-close { position: absolute; top: 1rem; right: 1rem; z-index: 3; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 1.5rem; line-height: 1; cursor: pointer; }
+.modal-close:hover { border-color: var(--ink); }
+@media (max-width: 600px) {
+  .slide.case { flex-basis: 84%; }
+  .case-modal { width: 100%; max-width: 100%; max-height: 92vh; margin: auto 0 0; border-radius: 24px 24px 0 0; }
+  .modal-body .stage { aspect-ratio: 4 / 3; }
+}
+@media (prefers-reduced-motion: reduce) { .track { scroll-behavior: auto; } .case-modal[open] { animation: none; } }
+.modal-body h3 { font-size: clamp(1.4rem, 3vw, 2.1rem); font-weight: 700; letter-spacing: -0.04em; line-height: 1.15; }
+.modal-body h3 b { font-weight: 800; }
+.modal-body h3 .rest { color: var(--muted); font-weight: 600; }
+.modal-body .case-top { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: start; }
