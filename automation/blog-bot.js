@@ -9,7 +9,7 @@
 //
 // Needs:
 //   KV binding  BLOG          (namespace "byananya-blog-drafts")
-//   Secrets     GEMINI_KEY, GITHUB_TOKEN, ADMIN_KEY, NTFY_TOPIC, and optionally ANTHROPIC_KEY (Claude backup)
+//   Secrets     GEMINI_KEY, GITHUB_TOKEN, ADMIN_KEY, NTFY_TOPIC, GROQ_KEY (free backup), optionally ANTHROPIC_KEY (paid, capped last resort)
 //   Cron        30 3 * * *    (09:00 India time)
 
 const REPO = 'Ananyapkumar/byananya';
@@ -141,13 +141,40 @@ async function claude(env, prompt, search) {
   throw new Error('Claude backup failed: ' + last);
 }
 
+// Groq Compound: free, has built-in web search
+async function groqWrite(env, prompt, search) {
+  const models = search ? ['groq/compound', 'groq/compound-mini'] : ['llama-3.3-70b-versatile', 'openai/gpt-oss-120b'];
+  let last = '';
+  for (const model of models) {
+    const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + env.GROQ_KEY },
+      body: JSON.stringify({ model, temperature: 0.7, max_tokens: 3000, messages: [{ role: 'user', content: prompt +
+        (search ? '\nAlso add a "sources" field to the JSON: a list of {"title": "...", "url": "..."} for the pages you actually used.' : '') }] })
+    });
+    if (!r.ok) { last = model + ' ' + r.status + ': ' + (await r.text()).slice(0, 200); continue; }
+    const d = await r.json(), msg = (d.choices || [])[0]?.message || {};
+    const m = String(msg.content || '').match(/\{[\s\S]*\}/);
+    if (!m) { last = model + ': no JSON in reply'; continue; }
+    const post = JSON.parse(m[0]);
+    if (!post.title || !post.markdown) { last = model + ': missing title or text'; continue; }
+    // prefer the search results Groq actually ran; fall back to the sources it listed
+    const found = [];
+    for (const t of (msg.executed_tools || [])) for (const res of (t.search_results?.results || [])) if (res.url) found.push({ uri: res.url, title: res.title || res.url });
+    for (const s2 of (Array.isArray(post.sources) ? post.sources : [])) if (s2 && s2.url) found.push({ uri: s2.url, title: s2.title || s2.url });
+    const seen = new Set(), sources = found.filter(x => !seen.has(x.uri) && seen.add(x.uri)).slice(0, 6);
+    delete post.sources;
+    return { ...post, sources };
+  }
+  throw new Error('Groq failed: ' + last);
+}
+
 async function writeDraft(env, slot, avoid) {
   const prompt = brief(slot.type, avoid) + '\n\n' + VOICE + '\n\n' + FORMAT;
-  try { return await writeDraftGemini(env, slot, avoid); }
-  catch (e) {
-    if (!(await claudeBudgetOk(env))) throw new Error(e.message + (env.ANTHROPIC_KEY ? ' (Claude backup has hit its monthly cap.)' : ''));
-    return claude(env, prompt, true);
-  }
+  const errors = [];
+  try { return await writeDraftGemini(env, slot, avoid); } catch (e) { errors.push('Gemini: ' + e.message.slice(0, 120)); }
+  if (env.GROQ_KEY) { try { return await groqWrite(env, prompt, true); } catch (e) { errors.push(e.message.slice(0, 160)); } }
+  if (await claudeBudgetOk(env)) return claude(env, prompt, true);
+  throw new Error(errors.join(' | ') + (env.ANTHROPIC_KEY ? ' | Claude backup has hit its monthly cap.' : ''));
 }
 
 async function writeDraftGemini(env, slot, avoid) {
@@ -165,8 +192,8 @@ async function reviseDraft(env, draft, feedback) {
   try {
     p = parsePost(await gemini(env, { contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: { temperature: 0.7, responseMimeType: 'application/json' } }));
   } catch (e) {
-    if (!(await claudeBudgetOk(env))) throw e;
-    p = await claude(env, prompt, false);
+    if (env.GROQ_KEY) { try { p = await groqWrite(env, prompt, false); } catch (e2) {} }
+    if (!p) { if (!(await claudeBudgetOk(env))) throw e; p = await claude(env, prompt, false); }
   }
   return { ...p, sources: draft.sources };
 }
@@ -292,7 +319,7 @@ async function handle(request, env) {
     // Setup check: shows which settings exist (never their values)
     if (url.pathname === '/check') {
       const rows = [['BLOG storage connection', !!(env.BLOG && env.BLOG.get)], ['GEMINI_KEY', !!env.GEMINI_KEY], ['GITHUB_TOKEN', !!env.GITHUB_TOKEN],
-        ['ADMIN_KEY', !!env.ADMIN_KEY], ['NTFY_TOPIC', !!env.NTFY_TOPIC], ['BASE_URL', !!env.BASE_URL && !String(env.BASE_URL).endsWith('/')], ['ANTHROPIC_KEY (optional Claude backup)', !!env.ANTHROPIC_KEY]];
+        ['ADMIN_KEY', !!env.ADMIN_KEY], ['NTFY_TOPIC', !!env.NTFY_TOPIC], ['BASE_URL', !!env.BASE_URL && !String(env.BASE_URL).endsWith('/')], ['GROQ_KEY (free backup)', !!env.GROQ_KEY], ['ANTHROPIC_KEY (optional paid backup)', !!env.ANTHROPIC_KEY]];
       return html('<div style="font-family:sans-serif;padding:2rem;line-height:2"><h2>Blog bot setup check</h2>' + rows.map(r => (r[1] ? '✅ ' : '❌ ') + r[0]).join('<br>') +
         (env.BLOG && env.BLOG.get ? '<p>Claude backup calls this month: ' + ((await env.BLOG.get('claude:' + istToday().slice(0, 7))) || 0) + ' of ' + CLAUDE_MAX_CALLS_PER_MONTH + '</p>' : '') +
         '<p style="color:#666">❌ means missing or misnamed. Names must match exactly, in capitals. BASE_URL must not end with a slash.</p></div>');
