@@ -1,8 +1,9 @@
 // Say it better: backend for byananya.com/say-it-better
-// Runs free on Cloudflare Workers. Needs one secret: GEMINI_KEY.
+// Runs free on Cloudflare Workers. Secrets: GROQ_KEY (main, very fast) and GEMINI_KEY (backup). Either one alone also works.
 
 const ALLOWED = ['https://byananya.com', 'https://www.byananya.com'];
-const MODEL = 'gemini-3.5-flash-lite';
+const GROQ_MODELS = ['llama-3.3-70b-versatile', 'openai/gpt-oss-120b'];
+const GEMINI_MODELS = ['gemini-3.5-flash-lite', 'gemini-2.5-flash-lite'];
 const WHO = ['Landlord', 'Client', 'Boss', 'Friend', 'Family', 'Crush', 'Partner', 'Ex', 'Distant relative', 'Someone new'];
 const WANT = ['Say no', 'Get paid', 'Buy time', 'Set a boundary', 'Keep it friendly', 'Push back', 'Flirt back', 'Keep my distance'];
 
@@ -49,25 +50,38 @@ export default {
     const want = WANT.includes(b.want) ? b.want : '';
     const mode = b.mode === 'reply' ? 'reply' : 'rephrase';
 
-    const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + MODEL + ':generateContent', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_KEY },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: buildPrompt(text, who, want, mode) }] }],
-        generationConfig: { temperature: 0.9, responseMimeType: 'application/json', thinkingConfig: { thinkingLevel: 'minimal' } }
-      })
-    });
-    if (r.status === 429) return reply({ ok: false, error: 'busy' }, 429, origin);
-    if (!r.ok) return reply({ ok: false, error: 'failed' }, 502, origin);
+    const prompt = buildPrompt(text, who, want, mode);
+    let busy = false;
+    const clean = o => ({ ok: true, polite: o.polite, firm: o.firm, funny: o.funny, british: o.british || '' });
+    const parse = t => { const o = JSON.parse(String(t).replace(/```json|```/g, '').trim().match(/\{[\s\S]*\}/)[0]); if (!o.polite) throw new Error('empty'); return o; };
 
-    try {
-      const d = await r.json();
-      const raw = (((d.candidates || [])[0] || {}).content || {}).parts.map(p => p.text || '').join('');
-      const out = JSON.parse(raw.replace(/```json|```/g, '').trim());
-      if (!out.polite) throw new Error('empty');
-      return reply({ ok: true, polite: out.polite, firm: out.firm, funny: out.funny, british: out.british || '' }, 200, origin);
-    } catch (e) {
-      return reply({ ok: false, error: 'failed' }, 502, origin);
+    // 1. Groq (fast)
+    if (env.GROQ_KEY) for (const model of GROQ_MODELS) {
+      try {
+        const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + env.GROQ_KEY },
+          body: JSON.stringify({ model, temperature: 0.9, max_tokens: 700, response_format: { type: 'json_object' }, messages: [{ role: 'user', content: prompt }] })
+        });
+        if (r.status === 429) { busy = true; continue; }
+        if (!r.ok) continue;
+        const d = await r.json();
+        return reply(clean(parse(d.choices[0].message.content)), 200, origin);
+      } catch (e) { /* try the next option */ }
     }
+    // 2. Gemini (backup)
+    if (env.GEMINI_KEY) for (const model of GEMINI_MODELS) {
+      try {
+        const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_KEY },
+          body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.9, responseMimeType: 'application/json', thinkingConfig: { thinkingLevel: 'minimal' } } })
+        });
+        if (r.status === 429) { busy = true; continue; }
+        if (!r.ok) continue;
+        const d = await r.json();
+        return reply(clean(parse((((d.candidates || [])[0] || {}).content || {}).parts.map(p => p.text || '').join(''))), 200, origin);
+      } catch (e) { /* try the next option */ }
+    }
+    return reply({ ok: false, error: busy ? 'busy' : 'failed' }, busy ? 429 : 502, origin);
   }
 };
