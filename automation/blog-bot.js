@@ -15,10 +15,10 @@
 const REPO = 'Ananyapkumar/byananya';
 const MODELS = ['gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-2.5-flash'];
 const IST = 5.5 * 3600 * 1000;
-// Claude backup: only used when Gemini fails. Hard cap on Claude calls per month (about Rs 50 at most).
+// Claude backup: only used when Gemini AND Groq both fail. Roughly Rs 2-3 per use; hard cap of 5 uses a month (about Rs 15 at most).
 const CLAUDE_MODELS = ['claude-haiku-4-5', 'claude-haiku-5-5'];
-const CLAUDE_MAX_CALLS_PER_MONTH = 8;
-const CLAUDE_SEARCHES_PER_POST = 2;
+const CLAUDE_MAX_CALLS_PER_MONTH = 5;
+const CLAUDE_SEARCHES_PER_POST = 1;
 
 // ---------- dates ----------
 const ymd = d => d.toISOString().slice(0, 10);
@@ -117,7 +117,7 @@ async function claude(env, prompt, search) {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': env.ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model, max_tokens: 2500, messages: [{ role: 'user', content: prompt }],
+      body: JSON.stringify({ model, max_tokens: 1800, messages: [{ role: 'user', content: prompt }],
         tools: search ? [{ type: 'web_search_20250305', name: 'web_search', max_uses: CLAUDE_SEARCHES_PER_POST }] : undefined })
     });
     if (r.ok) {
