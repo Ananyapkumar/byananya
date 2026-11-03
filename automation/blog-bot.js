@@ -9,12 +9,16 @@
 //
 // Needs:
 //   KV binding  BLOG          (namespace "byananya-blog-drafts")
-//   Secrets     GEMINI_KEY, GITHUB_TOKEN, ADMIN_KEY, NTFY_TOPIC
+//   Secrets     GEMINI_KEY, GITHUB_TOKEN, ADMIN_KEY, NTFY_TOPIC, and optionally ANTHROPIC_KEY (Claude backup)
 //   Cron        30 3 * * *    (09:00 India time)
 
 const REPO = 'Ananyapkumar/byananya';
 const MODELS = ['gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-2.5-flash'];
 const IST = 5.5 * 3600 * 1000;
+// Claude backup: only used when Gemini fails. Hard cap on Claude calls per month (about Rs 50 at most).
+const CLAUDE_MODELS = ['claude-haiku-4-5', 'claude-haiku-5-5'];
+const CLAUDE_MAX_CALLS_PER_MONTH = 8;
+const CLAUDE_SEARCHES_PER_POST = 2;
 
 // ---------- dates ----------
 const ymd = d => d.toISOString().slice(0, 10);
@@ -98,7 +102,55 @@ function parsePost(d) {
 
 const FORMAT = `Return ONLY a JSON object, no other text: {"title": "short, specific, not clickbait", "summary": "one sentence under 20 words", "topic": "3 to 6 word name of the topic", "markdown": "the full post in Markdown, without the title"}`;
 
+async function claudeBudgetOk(env) {
+  if (!env.ANTHROPIC_KEY) return false;
+  const used = +((await env.BLOG.get('claude:' + istToday().slice(0, 7))) || 0);
+  return used < CLAUDE_MAX_CALLS_PER_MONTH;
+}
+async function claudeCount(env) {
+  const key = 'claude:' + istToday().slice(0, 7);
+  await env.BLOG.put(key, String(+((await env.BLOG.get(key)) || 0) + 1));
+}
+async function claude(env, prompt, search) {
+  let last = '';
+  for (const model of CLAUDE_MODELS) {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': env.ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model, max_tokens: 2500, messages: [{ role: 'user', content: prompt }],
+        tools: search ? [{ type: 'web_search_20250305', name: 'web_search', max_uses: CLAUDE_SEARCHES_PER_POST }] : undefined })
+    });
+    if (r.ok) {
+      await claudeCount(env);
+      const d = await r.json(), blocks = d.content || [];
+      const text = blocks.filter(b => b.type === 'text').map(b => b.text).join('');
+      const m = text.match(/\{[\s\S]*\}/);
+      if (!m) throw new Error('Claude draft came back empty');
+      const post = JSON.parse(m[0]);
+      if (!post.title || !post.markdown) throw new Error('Claude draft missing title or text');
+      const seen = new Set(), sources = [];
+      for (const b of blocks.filter(b => b.type === 'web_search_tool_result'))
+        for (const res of (Array.isArray(b.content) ? b.content : []))
+          if (res.url && !seen.has(res.url)) { seen.add(res.url); sources.push({ uri: res.url, title: res.title || res.url }); }
+      return { ...post, sources: sources.slice(0, 6) };
+    }
+    last = model + ' ' + r.status + ': ' + (await r.text()).slice(0, 200);
+    if (r.status === 401 || r.status === 403) throw new Error('Claude rejected the key. Check the ANTHROPIC_KEY secret.');
+    if (r.status !== 404 && r.status !== 400) break;
+  }
+  throw new Error('Claude backup failed: ' + last);
+}
+
 async function writeDraft(env, slot, avoid) {
+  const prompt = brief(slot.type, avoid) + '\n\n' + VOICE + '\n\n' + FORMAT;
+  try { return await writeDraftGemini(env, slot, avoid); }
+  catch (e) {
+    if (!(await claudeBudgetOk(env))) throw new Error(e.message + (env.ANTHROPIC_KEY ? ' (Claude backup has hit its monthly cap.)' : ''));
+    return claude(env, prompt, true);
+  }
+}
+
+async function writeDraftGemini(env, slot, avoid) {
   const d = await gemini(env, {
     contents: [{ role: 'user', parts: [{ text: brief(slot.type, avoid) + '\n\n' + VOICE + '\n\n' + FORMAT }] }],
     tools: [{ google_search: {} }],
@@ -108,11 +160,14 @@ async function writeDraft(env, slot, avoid) {
 }
 
 async function reviseDraft(env, draft, feedback) {
-  const d = await gemini(env, {
-    contents: [{ role: 'user', parts: [{ text: `Here is a blog post draft:\n\nTITLE: ${draft.title}\n\n${draft.markdown}\n\nRewrite it with this feedback from the author: "${feedback}"\nKeep the same facts. Do not add new facts.\n\n${VOICE}\n\n${FORMAT}` }] }],
-    generationConfig: { temperature: 0.7, responseMimeType: 'application/json' }
-  });
-  const p = parsePost(d);
+  const prompt = `Here is a blog post draft:\n\nTITLE: ${draft.title}\n\n${draft.markdown}\n\nRewrite it with this feedback from the author: "${feedback}"\nKeep the same facts. Do not add new facts.\n\n${VOICE}\n\n${FORMAT}`;
+  let p;
+  try {
+    p = parsePost(await gemini(env, { contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: { temperature: 0.7, responseMimeType: 'application/json' } }));
+  } catch (e) {
+    if (!(await claudeBudgetOk(env))) throw e;
+    p = await claude(env, prompt, false);
+  }
   return { ...p, sources: draft.sources };
 }
 
@@ -237,8 +292,9 @@ async function handle(request, env) {
     // Setup check: shows which settings exist (never their values)
     if (url.pathname === '/check') {
       const rows = [['BLOG storage connection', !!(env.BLOG && env.BLOG.get)], ['GEMINI_KEY', !!env.GEMINI_KEY], ['GITHUB_TOKEN', !!env.GITHUB_TOKEN],
-        ['ADMIN_KEY', !!env.ADMIN_KEY], ['NTFY_TOPIC', !!env.NTFY_TOPIC], ['BASE_URL', !!env.BASE_URL && !String(env.BASE_URL).endsWith('/')]];
+        ['ADMIN_KEY', !!env.ADMIN_KEY], ['NTFY_TOPIC', !!env.NTFY_TOPIC], ['BASE_URL', !!env.BASE_URL && !String(env.BASE_URL).endsWith('/')], ['ANTHROPIC_KEY (optional Claude backup)', !!env.ANTHROPIC_KEY]];
       return html('<div style="font-family:sans-serif;padding:2rem;line-height:2"><h2>Blog bot setup check</h2>' + rows.map(r => (r[1] ? '✅ ' : '❌ ') + r[0]).join('<br>') +
+        (env.BLOG && env.BLOG.get ? '<p>Claude backup calls this month: ' + ((await env.BLOG.get('claude:' + istToday().slice(0, 7))) || 0) + ' of ' + CLAUDE_MAX_CALLS_PER_MONTH + '</p>' : '') +
         '<p style="color:#666">❌ means missing or misnamed. Names must match exactly, in capitals. BASE_URL must not end with a slash.</p></div>');
     }
     if (!env.ADMIN_KEY || k !== env.ADMIN_KEY) return html('<p style="font-family:sans-serif;padding:2rem">Nothing to see here.</p>', 403);
