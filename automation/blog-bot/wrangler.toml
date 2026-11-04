@@ -12,3 +12,9 @@ kv_namespaces = [
 
 [triggers]
 crons = ["30 3 * * *"]   # 9:00am India time, every day
+
+# anonymous visitor counts for the daily ntfy report
+[[d1_databases]]
+binding = "STATS"
+database_name = "byananya-stats"
+database_id = "2bd57501-3393-4bb4-a79d-a04615bf2493"
