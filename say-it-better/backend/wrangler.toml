@@ -3,3 +3,7 @@ name = "say-it-better"
 main = "worker.js"
 compatibility_date = "2026-10-01"
 keep_vars = true
+
+# Cloudflare Workers AI: free daily allowance, used as a backup when Groq is busy
+[ai]
+binding = "AI"
