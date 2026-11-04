@@ -10,6 +10,11 @@ on:
       - ".github/workflows/deploy-workers.yml"
   workflow_dispatch:
 
+# one deploy at a time, so two runs never update the same worker at once
+concurrency:
+  group: deploy-workers
+  cancel-in-progress: false
+
 jobs:
   say-it-better:
     runs-on: ubuntu-latest
