@@ -12,10 +12,12 @@
 //   Secrets     GITHUB_TOKEN, ADMIN_KEY, NTFY_TOPIC, GROQ_KEY, TAVILY_KEY, GEMINI_KEY, optionally ANTHROPIC_KEY (paid, capped)
 //   Writers, in order: Groq Compound -> Tavily search + Groq -> Gemini -> Claude (capped)
 //   Cron        30 3 * * *    (09:00 India time)
+//   D1 binding  STATS         (database "byananya-stats") for the anonymous daily visitor report
 
 const REPO = 'Ananyapkumar/byananya';
 const MODELS = ['gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-2.5-flash'];
 const IST = 5.5 * 3600 * 1000;
+const GROQ_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'qwen/qwen3-32b'];
 // Claude backup: only used when Gemini AND Groq both fail. Roughly Rs 2-3 per use; hard cap of 5 uses a month (about Rs 15 at most).
 const CLAUDE_MODELS = ['claude-haiku-4-5', 'claude-haiku-5-5'];
 const CLAUDE_MAX_CALLS_PER_MONTH = 5;
@@ -191,22 +193,34 @@ async function tavilyGroq(env, slot, avoid) {
   const prompt = brief(slot.type, avoid).replace(/^Search the web and pick/, 'From the search results below, pick') +
     '\n\n' + VOICE + '\n\nAlso include "used": a list of the result numbers you relied on, like [2, 5].\n' +
     FORMAT.replace('}', ', "used": [1, 2]}') + '\n\nSEARCH RESULTS:\n' + list;
-  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + env.GROQ_KEY },
-    body: JSON.stringify({ model: 'llama-3.3-70b-versatile', temperature: 0.7, max_tokens: 3000, response_format: { type: 'json_object' }, messages: [{ role: 'user', content: prompt }] })
-  });
-  if (!r.ok) throw new Error('Groq writing failed ' + r.status);
-  const post = JSON.parse((await r.json()).choices[0].message.content);
-  if (!post.title || !post.markdown) throw new Error('Groq draft missing title or text');
+  const post = await groqChat(env, prompt);
   const used = (Array.isArray(post.used) ? post.used : []).map(n => results[n - 1]).filter(Boolean);
   delete post.used;
   return { ...post, sources: (used.length ? used : results.slice(0, 3)).slice(0, 6).map(x => ({ uri: x.url, title: x.title })) };
 }
 
+// Plain Groq call that tries each model until one answers (models get retired over time)
+async function groqChat(env, prompt) {
+  const fails = [];
+  for (const model of GROQ_MODELS) {
+    const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + env.GROQ_KEY },
+      body: JSON.stringify({ model, temperature: 0.7, max_tokens: 4000, response_format: { type: 'json_object' }, messages: [{ role: 'user', content: prompt }],
+        ...(model.startsWith('openai/') ? { reasoning_effort: 'low' } : {}) })
+    });
+    if (!r.ok) { fails.push(model.split('/').pop() + ' ' + r.status); continue; }
+    try {
+      const post = JSON.parse((await r.json()).choices[0].message.content);
+      if (post.title && post.markdown) return post;
+      fails.push(model.split('/').pop() + ' incomplete');
+    } catch (e) { fails.push(model.split('/').pop() + ' bad JSON'); }
+  }
+  throw new Error('Groq: ' + fails.join(', '));
+}
+
 async function writeDraft(env, slot, avoid) {
   const prompt = brief(slot.type, avoid) + '\n\n' + VOICE + '\n\n' + FORMAT;
   const errors = [];
-  if (env.GROQ_KEY) { try { return await groqWrite(env, prompt, true); } catch (e) { errors.push('Groq Compound: ' + e.message.slice(0, 100)); } }
   if (env.GROQ_KEY && env.TAVILY_KEY) { try { return await tavilyGroq(env, slot, avoid); } catch (e) { errors.push('Tavily + Groq: ' + e.message.slice(0, 100)); } }
   else errors.push('Tavily + Groq: skipped, TAVILY_KEY not added yet');
   if (env.GEMINI_KEY) { try { return await writeDraftGemini(env, slot, avoid); } catch (e) { errors.push('Gemini: ' + (/quota|429/i.test(e.message) ? 'out of free quota' : e.message.slice(0, 100))); } }
@@ -226,7 +240,7 @@ async function writeDraftGemini(env, slot, avoid) {
 async function reviseDraft(env, draft, feedback) {
   const prompt = `Here is a blog post draft:\n\nTITLE: ${draft.title}\n\n${draft.markdown}\n\nRewrite it with this feedback from the author: "${feedback}"\nKeep the same facts. Do not add new facts.\n\n${VOICE}\n\n${FORMAT}`;
   let p, err = 'no writer available';
-  if (env.GROQ_KEY) { try { p = await groqWrite(env, prompt, false); } catch (e) { err = e.message; } }
+  if (env.GROQ_KEY) { try { p = await groqChat(env, prompt); } catch (e) { err = e.message; } }
   if (!p && env.GEMINI_KEY) { try { p = parsePost(await gemini(env, { contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: { temperature: 0.7, responseMimeType: 'application/json' } })); } catch (e) { err = e.message; } }
   if (!p && (await claudeBudgetOk(env))) p = await claude(env, prompt, false);
   if (!p) throw new Error('Could not rewrite right now (' + err.slice(0, 120) + ')');
@@ -285,6 +299,67 @@ async function publish(env, d) {
   await notify(env, 'Published: ' + d.title, 'Live on byananya.com in a minute or two.', `https://byananya.com/post.html?p=${slug}`, ['tada']);
 }
 
+// ---------- anonymous visitor stats ----------
+const SITE_ORIGINS = ['https://byananya.com', 'https://www.byananya.com'];
+const BOT_UA = /bot|crawl|spider|slurp|preview|facebookexternalhit|linkedinbot|whatsapp|headless|lighthouse|monitor/i;
+function sourceOf(ref) {
+  let h = '';
+  try { h = new URL(ref).hostname.replace(/^www\./, ''); } catch (e) { return 'direct'; }
+  if (!h || h.endsWith('byananya.com')) return 'direct';
+  if (/linkedin\.com$|lnkd\.in$/.test(h)) return 'LinkedIn';
+  if (/google\./.test(h)) return 'Google';
+  if (/github\.com$/.test(h)) return 'GitHub';
+  if (/(^|\.)(t\.co|x\.com|twitter\.com)$/.test(h)) return 'X';
+  if (/whatsapp|wa\.me/.test(h)) return 'WhatsApp';
+  return h;
+}
+async function recordHit(request, env) {
+  const origin = request.headers.get('Origin') || '';
+  const cors = { 'Access-Control-Allow-Origin': SITE_ORIGINS.includes(origin) ? origin : SITE_ORIGINS[0], 'Vary': 'Origin' };
+  if (!SITE_ORIGINS.includes(origin) || !env.STATS) return new Response(null, { status: 204, headers: cors });
+  const ua = request.headers.get('User-Agent') || '';
+  if (BOT_UA.test(ua)) return new Response(null, { status: 204, headers: cors });
+  let b = {};
+  try { b = JSON.parse(await request.text()); } catch (e) {}
+  const day = istToday();
+  const ip = request.headers.get('CF-Connecting-IP') || '';
+  // scrambled, changes every day, so no IP or person can be recovered from it
+  const raw = new TextEncoder().encode(ip + '|' + ua + '|' + day + '|' + (env.ADMIN_KEY || ''));
+  const visitor = [...new Uint8Array(await crypto.subtle.digest('SHA-256', raw))].slice(0, 8).map(x => x.toString(16).padStart(2, '0')).join('');
+  const page = String(b.p || '/').slice(0, 120);
+  const kind = b.k === 'use' ? 'use' : 'view';
+  await env.STATS.prepare('INSERT INTO hits (day, page, visitor, source, kind, at) VALUES (?, ?, ?, ?, ?, ?)')
+    .bind(day, page, visitor, sourceOf(b.r || ''), kind, new Date().toISOString()).run();
+  return new Response(null, { status: 204, headers: cors });
+}
+const PAGE_NAMES = p => p === '/' || p === '/index.html' ? 'Home' : p.startsWith('/say-it-better') ? 'Say it better' : p.startsWith('/post.html') ? 'Blog: ' + (p.split('p=')[1] || 'post').replace(/-/g, ' ').slice(0, 40) : p;
+async function statsFor(env, day) {
+  const q = (sql) => env.STATS.prepare(sql).bind(day);
+  const [v, pv, uses, pages, sources] = await Promise.all([
+    q("SELECT COUNT(DISTINCT visitor) n FROM hits WHERE day = ? AND kind = 'view'").first(),
+    q("SELECT COUNT(*) n FROM hits WHERE day = ? AND kind = 'view'").first(),
+    q("SELECT COUNT(*) n FROM hits WHERE day = ? AND kind = 'use'").first(),
+    q("SELECT page, COUNT(*) n FROM hits WHERE day = ? AND kind = 'view' GROUP BY page ORDER BY n DESC LIMIT 4").all(),
+    q("SELECT src AS source, COUNT(*) n FROM (SELECT visitor, COALESCE(MAX(CASE WHEN source <> 'direct' THEN source END), 'direct') src FROM hits WHERE day = ? AND kind = 'view' GROUP BY visitor) GROUP BY src ORDER BY n DESC LIMIT 5").all()
+  ]);
+  return { visitors: v.n, views: pv.n, uses: uses.n, pages: pages.results, sources: sources.results };
+}
+function statsText(s) {
+  if (!s.views) return 'No visits recorded.';
+  return `${s.visitors} visitor${s.visitors === 1 ? '' : 's'}, ${s.views} page view${s.views === 1 ? '' : 's'}.\n` +
+    `Top pages: ${s.pages.map(p => PAGE_NAMES(p.page) + ' (' + p.n + ')').join(', ')}\n` +
+    `Came from: ${s.sources.map(x => x.source + ' ' + x.n).join(', ')}\n` +
+    `Say it better used ${s.uses} time${s.uses === 1 ? '' : 's'}.`;
+}
+async function dailyReport(env) {
+  if (!env.STATS) return 'no stats database';
+  const yesterday = addDays(istToday(), -1);
+  const s = await statsFor(env, yesterday);
+  await notify(env, `Yesterday on byananya.com: ${s.visitors} visitor${s.visitors === 1 ? '' : 's'}`, statsText(s), 'https://byananya.com', ['bar_chart']);
+  await env.STATS.prepare('DELETE FROM hits WHERE day < ?').bind(addDays(istToday(), -90)).run(); // keep 90 days
+  return 'report sent for ' + yesterday;
+}
+
 // ---------- daily run ----------
 async function daily(env) {
   const today = istToday(), tomorrow = addDays(today, 1), log = [];
@@ -300,6 +375,7 @@ async function daily(env) {
     if (d.status === 'approved') { try { await publish(env, d); log.push('published ' + d.id); } catch (e) { log.push('publish failed ' + d.id + ': ' + e.message); } }
     else if (d.status === 'pending' && !(d.createdAt || '').startsWith(today)) { await sendForApproval(env, d, true); log.push('reminded ' + d.id); }
   }
+  try { log.push(await dailyReport(env)); } catch (e) { log.push('report failed: ' + e.message); }
   return log;
 }
 
@@ -351,10 +427,14 @@ export default {
 
 async function handle(request, env) {
     const url = new URL(request.url), k = url.searchParams.get('k') || '';
+    if (url.pathname === '/hit') {
+      if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'POST', 'Access-Control-Allow-Headers': 'Content-Type' } });
+      return recordHit(request, env);
+    }
     // Setup check: shows which settings exist (never their values)
     if (url.pathname === '/check') {
       const rows = [['BLOG storage connection', !!(env.BLOG && env.BLOG.get)], ['GEMINI_KEY', !!env.GEMINI_KEY], ['GITHUB_TOKEN', !!env.GITHUB_TOKEN],
-        ['ADMIN_KEY', !!env.ADMIN_KEY], ['NTFY_TOPIC', !!env.NTFY_TOPIC], ['BASE_URL', !!env.BASE_URL && !String(env.BASE_URL).endsWith('/')], ['GROQ_KEY', !!env.GROQ_KEY], ['TAVILY_KEY', !!env.TAVILY_KEY], ['ANTHROPIC_KEY (optional paid backup)', !!env.ANTHROPIC_KEY]];
+        ['ADMIN_KEY', !!env.ADMIN_KEY], ['NTFY_TOPIC', !!env.NTFY_TOPIC], ['BASE_URL', !!env.BASE_URL && !String(env.BASE_URL).endsWith('/')], ['GROQ_KEY', !!env.GROQ_KEY], ['TAVILY_KEY', !!env.TAVILY_KEY], ['STATS database (visitor report)', !!env.STATS], ['ANTHROPIC_KEY (optional paid backup)', !!env.ANTHROPIC_KEY]];
       return html('<div style="font-family:sans-serif;padding:2rem;line-height:2"><h2>Blog bot setup check</h2>' + rows.map(r => (r[1] ? '✅ ' : '❌ ') + r[0]).join('<br>') +
         (env.BLOG && env.BLOG.get ? '<p>Claude backup calls this month: ' + ((await env.BLOG.get('claude:' + istToday().slice(0, 7))) || 0) + ' of ' + CLAUDE_MAX_CALLS_PER_MONTH + '</p>' : '') +
         '<p style="color:#666">❌ means missing or misnamed. Names must match exactly, in capitals. BASE_URL must not end with a slash.</p></div>');
@@ -363,6 +443,10 @@ async function handle(request, env) {
 
     // Manual triggers for testing: /run (daily job now) and /test?type=health|tech (one draft now)
     if (url.pathname === '/run') return new Response((await daily(env)).join('\n') || 'Nothing due today.');
+    if (url.pathname === '/stats') {
+      const day = url.searchParams.get('day') || istToday();
+      return html('<div style="font-family:sans-serif;padding:2rem;line-height:1.9;white-space:pre-line"><h2>byananya.com on ' + esc(day) + '</h2>' + esc(statsText(await statsFor(env, day))) + '</div>');
+    }
     if (url.pathname === '/test') {
       const type = url.searchParams.get('type') === 'tech' ? 'tech' : 'health';
       const slot = { type, date: addDays(istToday(), 1), id: type + '-test-' + Date.now() };
