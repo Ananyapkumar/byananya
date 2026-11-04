@@ -1,0 +1,5 @@
+# Say it better backend on Cloudflare. Deployed automatically by GitHub (see .github/workflows/deploy-workers.yml).
+name = "say-it-better"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+keep_vars = true
