@@ -16,6 +16,7 @@
 const REPO = 'Ananyapkumar/byananya';
 const MODELS = ['gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-2.5-flash'];
 const IST = 5.5 * 3600 * 1000;
+const GROQ_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'qwen/qwen3-32b'];
 // Claude backup: only used when Gemini AND Groq both fail. Roughly Rs 2-3 per use; hard cap of 5 uses a month (about Rs 15 at most).
 const CLAUDE_MODELS = ['claude-haiku-4-5', 'claude-haiku-5-5'];
 const CLAUDE_MAX_CALLS_PER_MONTH = 5;
@@ -191,22 +192,34 @@ async function tavilyGroq(env, slot, avoid) {
   const prompt = brief(slot.type, avoid).replace(/^Search the web and pick/, 'From the search results below, pick') +
     '\n\n' + VOICE + '\n\nAlso include "used": a list of the result numbers you relied on, like [2, 5].\n' +
     FORMAT.replace('}', ', "used": [1, 2]}') + '\n\nSEARCH RESULTS:\n' + list;
-  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + env.GROQ_KEY },
-    body: JSON.stringify({ model: 'llama-3.3-70b-versatile', temperature: 0.7, max_tokens: 3000, response_format: { type: 'json_object' }, messages: [{ role: 'user', content: prompt }] })
-  });
-  if (!r.ok) throw new Error('Groq writing failed ' + r.status);
-  const post = JSON.parse((await r.json()).choices[0].message.content);
-  if (!post.title || !post.markdown) throw new Error('Groq draft missing title or text');
+  const post = await groqChat(env, prompt);
   const used = (Array.isArray(post.used) ? post.used : []).map(n => results[n - 1]).filter(Boolean);
   delete post.used;
   return { ...post, sources: (used.length ? used : results.slice(0, 3)).slice(0, 6).map(x => ({ uri: x.url, title: x.title })) };
 }
 
+// Plain Groq call that tries each model until one answers (models get retired over time)
+async function groqChat(env, prompt) {
+  const fails = [];
+  for (const model of GROQ_MODELS) {
+    const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + env.GROQ_KEY },
+      body: JSON.stringify({ model, temperature: 0.7, max_tokens: 4000, response_format: { type: 'json_object' }, messages: [{ role: 'user', content: prompt }],
+        ...(model.startsWith('openai/') ? { reasoning_effort: 'low' } : {}) })
+    });
+    if (!r.ok) { fails.push(model.split('/').pop() + ' ' + r.status); continue; }
+    try {
+      const post = JSON.parse((await r.json()).choices[0].message.content);
+      if (post.title && post.markdown) return post;
+      fails.push(model.split('/').pop() + ' incomplete');
+    } catch (e) { fails.push(model.split('/').pop() + ' bad JSON'); }
+  }
+  throw new Error('Groq: ' + fails.join(', '));
+}
+
 async function writeDraft(env, slot, avoid) {
   const prompt = brief(slot.type, avoid) + '\n\n' + VOICE + '\n\n' + FORMAT;
   const errors = [];
-  if (env.GROQ_KEY) { try { return await groqWrite(env, prompt, true); } catch (e) { errors.push('Groq Compound: ' + e.message.slice(0, 100)); } }
   if (env.GROQ_KEY && env.TAVILY_KEY) { try { return await tavilyGroq(env, slot, avoid); } catch (e) { errors.push('Tavily + Groq: ' + e.message.slice(0, 100)); } }
   else errors.push('Tavily + Groq: skipped, TAVILY_KEY not added yet');
   if (env.GEMINI_KEY) { try { return await writeDraftGemini(env, slot, avoid); } catch (e) { errors.push('Gemini: ' + (/quota|429/i.test(e.message) ? 'out of free quota' : e.message.slice(0, 100))); } }
@@ -226,7 +239,7 @@ async function writeDraftGemini(env, slot, avoid) {
 async function reviseDraft(env, draft, feedback) {
   const prompt = `Here is a blog post draft:\n\nTITLE: ${draft.title}\n\n${draft.markdown}\n\nRewrite it with this feedback from the author: "${feedback}"\nKeep the same facts. Do not add new facts.\n\n${VOICE}\n\n${FORMAT}`;
   let p, err = 'no writer available';
-  if (env.GROQ_KEY) { try { p = await groqWrite(env, prompt, false); } catch (e) { err = e.message; } }
+  if (env.GROQ_KEY) { try { p = await groqChat(env, prompt); } catch (e) { err = e.message; } }
   if (!p && env.GEMINI_KEY) { try { p = parsePost(await gemini(env, { contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: { temperature: 0.7, responseMimeType: 'application/json' } })); } catch (e) { err = e.message; } }
   if (!p && (await claudeBudgetOk(env))) p = await claude(env, prompt, false);
   if (!p) throw new Error('Could not rewrite right now (' + err.slice(0, 120) + ')');
