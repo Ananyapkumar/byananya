@@ -1,11 +1,12 @@
 // Say it better: backend for byananya.com/say-it-better
-// Runs free on Cloudflare Workers. Order: Groq (fast, main) -> Cloudflare Workers AI (built in, no key) -> Gemini.
-// Secrets: GROQ_KEY, GEMINI_KEY. Binding: AI (Workers AI).
+// Runs free on Cloudflare Workers. Order: Groq (fast, main) -> Cloudflare Workers AI (built in, no key).
+// Gemini is deliberately not used here: its free tier may use inputs to improve Google's products.
+// Nothing a visitor types is stored or logged by this worker.
+// Secret: GROQ_KEY. Binding: AI (Workers AI).
 
 const ALLOWED = ['https://byananya.com', 'https://www.byananya.com'];
 const GROQ_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'qwen/qwen3-32b'];
 const CF_MODELS = ['@cf/nvidia/nemotron-3-120b-a12b', '@cf/zai-org/glm-4.7-flash', '@cf/google/gemma-4-26b-a4b-it'];
-const GEMINI_MODELS = ['gemini-3.5-flash-lite', 'gemini-2.5-flash-lite'];
 const WHO = ['Landlord', 'Client', 'Boss', 'Friend', 'Family', 'Crush', 'Partner', 'Ex', 'Distant relative', 'Someone new'];
 const WANT = ['Say no', 'Get paid', 'Buy time', 'Set a boundary', 'Keep it friendly', 'Push back', 'Flirt back', 'Keep my distance'];
 
@@ -77,20 +78,6 @@ export default {
         const text = typeof out === 'string' ? out : (typeof out.response === 'string' ? out.response : out.response ? JSON.stringify(out.response) : (out.choices?.[0]?.message?.content || ''));
         return reply(clean(parse(text)), 200, origin);
       } catch (e) { if (/429|limit|capacity|3040/i.test(String(e && e.message))) busy = true; }
-    }
-    // 3. Gemini (backup)
-    if (env.GEMINI_KEY) for (const model of GEMINI_MODELS) {
-      try {
-        const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent', {
-          method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_KEY },
-          body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.9, responseMimeType: 'application/json', thinkingConfig: { thinkingLevel: 'minimal' } } })
-        });
-        if (r.status === 429) { busy = true; continue; }
-        if (!r.ok) continue;
-        const d = await r.json();
-        return reply(clean(parse((((d.candidates || [])[0] || {}).content || {}).parts.map(p => p.text || '').join(''))), 200, origin);
-      } catch (e) { /* try the next option */ }
     }
     return reply({ ok: false, error: busy ? 'busy' : 'failed' }, busy ? 429 : 502, origin);
   }
