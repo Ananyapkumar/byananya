@@ -203,6 +203,7 @@
         } catch (err) { if (err.name === 'AbortError') throw err; res = { ok: false, error: 'failed' }; }
       }
       if (!res.ok) throw new Error(res.error || 'failed');
+      try { navigator.sendBeacon && navigator.sendBeacon('https://byananya-blog.ananyapkumar0710.workers.dev/hit', JSON.stringify({ p: '/say-it-better/', r: '', k: 'use' })); } catch (e) {}
       box.innerHTML = [['Polite', res.polite], ['Firm', res.firm], ['Funny', res.funny], ['Very British', res.british]].filter(function (x) { return x[1]; }).map(function (x) {
         var brit = x[0] === 'Very British';
         return '<div class="reply' + (brit ? ' brit' : '') + '"><span class="tone">' + (brit ? '🫖 ' : '') + x[0] + '</span><p>' + esc(x[1]) + '</p><button class="copy">Copy</button></div>';
@@ -268,5 +269,6 @@
   grow();
 })();
 </script>
+<script>/* anonymous visit count: no cookies, no personal data */(function(){try{var u='https://byananya-blog.ananyapkumar0710.workers.dev/hit',p=location.pathname+(location.pathname.indexOf('post.html')>-1?location.search:''),d=JSON.stringify({p:p,r:document.referrer});if(navigator.sendBeacon)navigator.sendBeacon(u,d);else fetch(u,{method:'POST',body:d,keepalive:true});}catch(e){}})();</script>
 </body>
 </html>
