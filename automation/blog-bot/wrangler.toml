@@ -1,0 +1,14 @@
+# Deploys the byananya blog bot to Cloudflare.
+# From this folder run:  npx wrangler login   (once)   then   npx wrangler deploy
+name = "byananya-blog"
+main = "blog-bot.js"
+compatibility_date = "2026-10-01"
+# keep the text settings you added in the dashboard (secrets are always kept)
+keep_vars = true
+
+kv_namespaces = [
+  { binding = "BLOG", id = "1c32cda6c76b43e8aed65e31ee2278c3" }
+]
+
+[triggers]
+crons = ["30 3 * * *"]   # 9:00am India time, every day
