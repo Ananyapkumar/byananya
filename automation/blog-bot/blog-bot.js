@@ -144,20 +144,20 @@ async function claude(env, prompt, search) {
 
 // Groq Compound: free, has built-in web search
 async function groqWrite(env, prompt, search) {
-  const models = search ? ['groq/compound', 'groq/compound-mini'] : ['llama-3.3-70b-versatile', 'openai/gpt-oss-120b'];
-  let last = '';
+  const models = search ? ['groq/compound'] : ['llama-3.3-70b-versatile', 'openai/gpt-oss-120b'];
+  const fails = [];
   for (const model of models) {
     const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + env.GROQ_KEY },
       body: JSON.stringify({ model, temperature: 0.7, max_tokens: 3000, messages: [{ role: 'user', content: prompt +
         (search ? '\nAlso add a "sources" field to the JSON: a list of {"title": "...", "url": "..."} for the pages you actually used.' : '') }] })
     });
-    if (!r.ok) { last = model + ' ' + r.status + ': ' + (await r.text()).slice(0, 200); continue; }
+    if (!r.ok) { fails.push(model + ' ' + r.status); continue; }
     const d = await r.json(), msg = (d.choices || [])[0]?.message || {};
     const m = String(msg.content || '').match(/\{[\s\S]*\}/);
-    if (!m) { last = model + ': no JSON in reply'; continue; }
+    if (!m) { fails.push(model + ' gave no JSON'); continue; }
     const post = JSON.parse(m[0]);
-    if (!post.title || !post.markdown) { last = model + ': missing title or text'; continue; }
+    if (!post.title || !post.markdown) { fails.push(model + ' missing title or text'); continue; }
     // prefer the search results Groq actually ran; fall back to the sources it listed
     const found = [];
     for (const t of (msg.executed_tools || [])) for (const res of (t.search_results?.results || [])) if (res.url) found.push({ uri: res.url, title: res.title || res.url });
@@ -166,7 +166,7 @@ async function groqWrite(env, prompt, search) {
     delete post.sources;
     return { ...post, sources };
   }
-  throw new Error('Groq failed: ' + last);
+  throw new Error(fails.join(', ') || 'no model answered');
 }
 
 // Tavily search + Groq writing: both free, very reliable
@@ -208,6 +208,7 @@ async function writeDraft(env, slot, avoid) {
   const errors = [];
   if (env.GROQ_KEY) { try { return await groqWrite(env, prompt, true); } catch (e) { errors.push('Groq Compound: ' + e.message.slice(0, 100)); } }
   if (env.GROQ_KEY && env.TAVILY_KEY) { try { return await tavilyGroq(env, slot, avoid); } catch (e) { errors.push('Tavily + Groq: ' + e.message.slice(0, 100)); } }
+  else errors.push('Tavily + Groq: skipped, TAVILY_KEY not added yet');
   if (env.GEMINI_KEY) { try { return await writeDraftGemini(env, slot, avoid); } catch (e) { errors.push('Gemini: ' + (/quota|429/i.test(e.message) ? 'out of free quota' : e.message.slice(0, 100))); } }
   if (await claudeBudgetOk(env)) return claude(env, prompt, true);
   throw new Error('All writers were unavailable (' + errors.join(' | ') + '). It will try again tomorrow.');
