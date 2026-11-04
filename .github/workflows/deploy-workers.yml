@@ -1,0 +1,40 @@
+# Puts the Cloudflare workers live whenever their code changes in this repo.
+# Needs repo secrets: CLOUDFLARE_API_TOKEN, GROQ_KEY, GEMINI_KEY
+name: Deploy workers
+on:
+  push:
+    branches: [main]
+    paths:
+      - "say-it-better/backend/**"
+      - "automation/blog-bot/**"
+      - ".github/workflows/deploy-workers.yml"
+  workflow_dispatch:
+
+jobs:
+  say-it-better:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: say-it-better/backend
+          secrets: |
+            GROQ_KEY
+            GEMINI_KEY
+        env:
+          GROQ_KEY: ${{ secrets.GROQ_KEY }}
+          GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
+
+  blog-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: automation/blog-bot
+          secrets: |
+            GROQ_KEY
+        env:
+          GROQ_KEY: ${{ secrets.GROQ_KEY }}
