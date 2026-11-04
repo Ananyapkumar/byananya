@@ -2,7 +2,7 @@
 // Runs free on Cloudflare Workers. Secrets: GROQ_KEY (main, very fast) and GEMINI_KEY (backup). Either one alone also works.
 
 const ALLOWED = ['https://byananya.com', 'https://www.byananya.com'];
-const GROQ_MODELS = ['llama-3.3-70b-versatile', 'openai/gpt-oss-120b'];
+const GROQ_MODELS = ['llama-3.3-70b-versatile', 'openai/gpt-oss-120b', 'llama-3.1-8b-instant'];
 const GEMINI_MODELS = ['gemini-3.5-flash-lite', 'gemini-2.5-flash-lite'];
 const WHO = ['Landlord', 'Client', 'Boss', 'Friend', 'Family', 'Crush', 'Partner', 'Ex', 'Distant relative', 'Someone new'];
 const WANT = ['Say no', 'Get paid', 'Buy time', 'Set a boundary', 'Keep it friendly', 'Push back', 'Flirt back', 'Keep my distance'];
