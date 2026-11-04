@@ -125,7 +125,8 @@
 
 <script>
 (function () {
-  var API = 'https://ananya1234.app.n8n.cloud/webhook/say-it-better';
+  // Cloudflare first; the old n8n backend stays as a safety net until it's switched off
+  var APIS = ['https://say-it-better.ananyapkumar0710.workers.dev', 'https://ananya1234.app.n8n.cloud/webhook/say-it-better'];
   var msg = document.getElementById('msg'), send = document.getElementById('send'), thread = document.getElementById('thread'),
       intro = document.getElementById('intro'), composer = document.getElementById('composer');
   var mode = 'rephrase', busy = false;
@@ -193,9 +194,14 @@
     var tick = setInterval(function () { si = Math.min(si + 1, steps.length - 1); status.textContent = steps[si]; }, 2500);
     var ctrl = new AbortController(), timer = setTimeout(function () { ctrl.abort(); }, 30000);
     try {
-      var r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, signal: ctrl.signal,
-        body: JSON.stringify({ message: text.slice(0, 1500), who: who, want: want, mode: mode }) });
-      var res = await r.json().catch(function () { return {}; });
+      var payload = JSON.stringify({ message: text.slice(0, 1500), who: who, want: want, mode: mode }), res = {};
+      for (var a = 0; a < APIS.length; a++) {
+        try {
+          var r = await fetch(APIS[a], { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, signal: ctrl.signal, body: payload });
+          res = await r.json().catch(function () { return {}; });
+          if (res.ok) break;
+        } catch (err) { if (err.name === 'AbortError') throw err; res = { ok: false, error: 'failed' }; }
+      }
       if (!res.ok) throw new Error(res.error || 'failed');
       box.innerHTML = [['Polite', res.polite], ['Firm', res.firm], ['Funny', res.funny], ['Very British', res.british]].filter(function (x) { return x[1]; }).map(function (x) {
         var brit = x[0] === 'Very British';
