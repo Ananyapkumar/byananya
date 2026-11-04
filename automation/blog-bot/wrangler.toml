@@ -3,7 +3,7 @@
 name = "byananya-blog"
 main = "blog-bot.js"
 compatibility_date = "2026-10-01"
-# keep the text settings you added in the dashboard (secrets are always kept)
+# keep the text settings you added in the dashboard (secrets are always kept). Tavily added Nov 2026.
 keep_vars = true
 
 kv_namespaces = [
