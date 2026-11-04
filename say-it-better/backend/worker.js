@@ -2,7 +2,7 @@
 // Runs free on Cloudflare Workers. Secrets: GROQ_KEY (main, very fast) and GEMINI_KEY (backup). Either one alone also works.
 
 const ALLOWED = ['https://byananya.com', 'https://www.byananya.com'];
-const GROQ_MODELS = ['llama-3.3-70b-versatile', 'openai/gpt-oss-120b', 'llama-3.1-8b-instant'];
+const GROQ_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'qwen/qwen3-32b'];
 const GEMINI_MODELS = ['gemini-3.5-flash-lite', 'gemini-2.5-flash-lite'];
 const WHO = ['Landlord', 'Client', 'Boss', 'Friend', 'Family', 'Crush', 'Partner', 'Ex', 'Distant relative', 'Someone new'];
 const WANT = ['Say no', 'Get paid', 'Buy time', 'Set a boundary', 'Keep it friendly', 'Push back', 'Flirt back', 'Keep my distance'];
@@ -60,7 +60,7 @@ export default {
       try {
         const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + env.GROQ_KEY },
-          body: JSON.stringify({ model, temperature: 0.9, max_tokens: 700, response_format: { type: 'json_object' }, messages: [{ role: 'user', content: prompt }] })
+          body: JSON.stringify({ model, temperature: 0.9, max_tokens: 1200, response_format: { type: 'json_object' }, messages: [{ role: 'user', content: prompt }], ...(model.startsWith('openai/') ? { reasoning_effort: 'low' } : {}) })
         });
         if (r.status === 429) { busy = true; continue; }
         if (!r.ok) continue;
