@@ -9,7 +9,8 @@
 //
 // Needs:
 //   KV binding  BLOG          (namespace "byananya-blog-drafts")
-//   Secrets     GEMINI_KEY, GITHUB_TOKEN, ADMIN_KEY, NTFY_TOPIC, GROQ_KEY (free backup), optionally ANTHROPIC_KEY (paid, capped last resort)
+//   Secrets     GITHUB_TOKEN, ADMIN_KEY, NTFY_TOPIC, GROQ_KEY, TAVILY_KEY, GEMINI_KEY, optionally ANTHROPIC_KEY (paid, capped)
+//   Writers, in order: Groq Compound -> Tavily search + Groq -> Gemini -> Claude (capped)
 //   Cron        30 3 * * *    (09:00 India time)
 
 const REPO = 'Ananyapkumar/byananya';
@@ -168,13 +169,48 @@ async function groqWrite(env, prompt, search) {
   throw new Error('Groq failed: ' + last);
 }
 
+// Tavily search + Groq writing: both free, very reliable
+function searchQueries(type) {
+  const month = new Date(Date.now() + IST).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  return type === 'health'
+    ? ['surprising new health study ' + month, 'new research sleep exercise brain mental health finding ' + month]
+    : ['new AI tool launched this week everyday use', 'Product Hunt new AI app launch ' + month];
+}
+async function tavilyGroq(env, slot, avoid) {
+  const results = [];
+  for (const q of searchQueries(slot.type)) {
+    const r = await fetch('https://api.tavily.com/search', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + env.TAVILY_KEY },
+      body: JSON.stringify({ api_key: env.TAVILY_KEY, query: q, search_depth: 'basic', topic: 'news', days: 30, max_results: 6 })
+    });
+    if (!r.ok) throw new Error('Tavily search failed ' + r.status);
+    for (const x of ((await r.json()).results || [])) if (x.url && !results.some(y => y.url === x.url)) results.push(x);
+  }
+  if (!results.length) throw new Error('Tavily found nothing');
+  const list = results.slice(0, 10).map((x, i) => `[${i + 1}] ${x.title}\nURL: ${x.url}\n${String(x.content || '').slice(0, 600)}`).join('\n\n');
+  const prompt = brief(slot.type, avoid).replace(/^Search the web and pick/, 'From the search results below, pick') +
+    '\n\n' + VOICE + '\n\nAlso include "used": a list of the result numbers you relied on, like [2, 5].\n' +
+    FORMAT.replace('}', ', "used": [1, 2]}') + '\n\nSEARCH RESULTS:\n' + list;
+  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + env.GROQ_KEY },
+    body: JSON.stringify({ model: 'llama-3.3-70b-versatile', temperature: 0.7, max_tokens: 3000, response_format: { type: 'json_object' }, messages: [{ role: 'user', content: prompt }] })
+  });
+  if (!r.ok) throw new Error('Groq writing failed ' + r.status);
+  const post = JSON.parse((await r.json()).choices[0].message.content);
+  if (!post.title || !post.markdown) throw new Error('Groq draft missing title or text');
+  const used = (Array.isArray(post.used) ? post.used : []).map(n => results[n - 1]).filter(Boolean);
+  delete post.used;
+  return { ...post, sources: (used.length ? used : results.slice(0, 3)).slice(0, 6).map(x => ({ uri: x.url, title: x.title })) };
+}
+
 async function writeDraft(env, slot, avoid) {
   const prompt = brief(slot.type, avoid) + '\n\n' + VOICE + '\n\n' + FORMAT;
   const errors = [];
-  try { return await writeDraftGemini(env, slot, avoid); } catch (e) { errors.push('Gemini: ' + e.message.slice(0, 120)); }
-  if (env.GROQ_KEY) { try { return await groqWrite(env, prompt, true); } catch (e) { errors.push(e.message.slice(0, 160)); } }
+  if (env.GROQ_KEY) { try { return await groqWrite(env, prompt, true); } catch (e) { errors.push('Groq Compound: ' + e.message.slice(0, 100)); } }
+  if (env.GROQ_KEY && env.TAVILY_KEY) { try { return await tavilyGroq(env, slot, avoid); } catch (e) { errors.push('Tavily + Groq: ' + e.message.slice(0, 100)); } }
+  if (env.GEMINI_KEY) { try { return await writeDraftGemini(env, slot, avoid); } catch (e) { errors.push('Gemini: ' + (/quota|429/i.test(e.message) ? 'out of free quota' : e.message.slice(0, 100))); } }
   if (await claudeBudgetOk(env)) return claude(env, prompt, true);
-  throw new Error(errors.join(' | ') + (env.ANTHROPIC_KEY ? ' | Claude backup has hit its monthly cap.' : ''));
+  throw new Error('All writers were unavailable (' + errors.join(' | ') + '). It will try again tomorrow.');
 }
 
 async function writeDraftGemini(env, slot, avoid) {
@@ -188,13 +224,11 @@ async function writeDraftGemini(env, slot, avoid) {
 
 async function reviseDraft(env, draft, feedback) {
   const prompt = `Here is a blog post draft:\n\nTITLE: ${draft.title}\n\n${draft.markdown}\n\nRewrite it with this feedback from the author: "${feedback}"\nKeep the same facts. Do not add new facts.\n\n${VOICE}\n\n${FORMAT}`;
-  let p;
-  try {
-    p = parsePost(await gemini(env, { contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: { temperature: 0.7, responseMimeType: 'application/json' } }));
-  } catch (e) {
-    if (env.GROQ_KEY) { try { p = await groqWrite(env, prompt, false); } catch (e2) {} }
-    if (!p) { if (!(await claudeBudgetOk(env))) throw e; p = await claude(env, prompt, false); }
-  }
+  let p, err = 'no writer available';
+  if (env.GROQ_KEY) { try { p = await groqWrite(env, prompt, false); } catch (e) { err = e.message; } }
+  if (!p && env.GEMINI_KEY) { try { p = parsePost(await gemini(env, { contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: { temperature: 0.7, responseMimeType: 'application/json' } })); } catch (e) { err = e.message; } }
+  if (!p && (await claudeBudgetOk(env))) p = await claude(env, prompt, false);
+  if (!p) throw new Error('Could not rewrite right now (' + err.slice(0, 120) + ')');
   return { ...p, sources: draft.sources };
 }
 
@@ -319,7 +353,7 @@ async function handle(request, env) {
     // Setup check: shows which settings exist (never their values)
     if (url.pathname === '/check') {
       const rows = [['BLOG storage connection', !!(env.BLOG && env.BLOG.get)], ['GEMINI_KEY', !!env.GEMINI_KEY], ['GITHUB_TOKEN', !!env.GITHUB_TOKEN],
-        ['ADMIN_KEY', !!env.ADMIN_KEY], ['NTFY_TOPIC', !!env.NTFY_TOPIC], ['BASE_URL', !!env.BASE_URL && !String(env.BASE_URL).endsWith('/')], ['GROQ_KEY (free backup)', !!env.GROQ_KEY], ['ANTHROPIC_KEY (optional paid backup)', !!env.ANTHROPIC_KEY]];
+        ['ADMIN_KEY', !!env.ADMIN_KEY], ['NTFY_TOPIC', !!env.NTFY_TOPIC], ['BASE_URL', !!env.BASE_URL && !String(env.BASE_URL).endsWith('/')], ['GROQ_KEY', !!env.GROQ_KEY], ['TAVILY_KEY', !!env.TAVILY_KEY], ['ANTHROPIC_KEY (optional paid backup)', !!env.ANTHROPIC_KEY]];
       return html('<div style="font-family:sans-serif;padding:2rem;line-height:2"><h2>Blog bot setup check</h2>' + rows.map(r => (r[1] ? '✅ ' : '❌ ') + r[0]).join('<br>') +
         (env.BLOG && env.BLOG.get ? '<p>Claude backup calls this month: ' + ((await env.BLOG.get('claude:' + istToday().slice(0, 7))) || 0) + ' of ' + CLAUDE_MAX_CALLS_PER_MONTH + '</p>' : '') +
         '<p style="color:#666">❌ means missing or misnamed. Names must match exactly, in capitals. BASE_URL must not end with a slash.</p></div>');
