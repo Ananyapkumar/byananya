@@ -360,6 +360,47 @@ async function dailyReport(env) {
   return 'report sent for ' + yesterday;
 }
 
+// ---------- weekly queue (Sundays) ----------
+const weekday = s => new Date(s + 'T00:00:00Z').getUTCDay(); // 0 = Sunday
+const shortDate = s => new Date(s + 'T00:00:00Z').toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+async function queue(env) {
+  const today = istToday(), done = [], upcoming = [];
+  const keys = await env.BLOG.list({ prefix: 'draft:' });
+  const drafts = {};
+  for (const k of keys.keys) { const d = JSON.parse(await env.BLOG.get(k.name)); if (!d.id.includes('-test-')) drafts[d.id] = d; }
+  for (const d of Object.values(drafts))
+    if (d.status === 'published' && d.publishedAt && d.publishedAt.slice(0, 10) >= addDays(today, -7)) done.push(`✅ ${shortDate(d.date)}: "${d.title}" (${label(d.type)})`);
+  for (let i = 0; i <= 14; i++) {
+    const day = addDays(today, i);
+    for (const s of slotsOn(day)) {
+      const d = drafts[s.id];
+      const state = !d ? `draft arrives ${shortDate(addDays(day, -1))}, 9am`
+        : d.status === 'pending' ? `⏳ waiting for your approval: "${d.title}"`
+        : d.status === 'approved' ? `👍 approved: "${d.title}"`
+        : d.status === 'published' ? `✅ published: "${d.title}"`
+        : `skipped (${d.status})`;
+      upcoming.push(`${shortDate(day)}, ${label(s.type)}: ${state}`);
+    }
+  }
+  // any older drafts still waiting
+  for (const d of Object.values(drafts)) if (d.status === 'pending' && d.date < today) upcoming.unshift(`⚠️ overdue, ${shortDate(d.date)}: "${d.title}" is still waiting for approval`);
+  let site = '';
+  if (env.STATS) {
+    const r = await env.STATS.prepare("SELECT COUNT(DISTINCT visitor || day) n, COUNT(*) v FROM hits WHERE day >= ? AND day < ? AND kind = 'view'").bind(addDays(today, -7), today).first();
+    site = `Site last 7 days: ${r.n} visits, ${r.v} page views.`;
+  }
+  return { done, upcoming, site };
+}
+function queueText(q) {
+  return (q.done.length ? 'Published this week:\n' + q.done.join('\n') + '\n\n' : 'Nothing published this week.\n\n') +
+    'Coming up (next 2 weeks):\n' + (q.upcoming.join('\n') || 'Nothing scheduled.') + (q.site ? '\n\n' + q.site : '');
+}
+async function weeklyUpdate(env) {
+  const q = await queue(env);
+  await notify(env, 'Your blog this week', queueText(q), `${env.BASE_URL}/queue?k=${encodeURIComponent(env.ADMIN_KEY)}`, ['calendar']);
+  return 'weekly update sent';
+}
+
 // ---------- daily run ----------
 async function daily(env) {
   const today = istToday(), tomorrow = addDays(today, 1), log = [];
@@ -376,6 +417,7 @@ async function daily(env) {
     else if (d.status === 'pending' && !(d.createdAt || '').startsWith(today)) { await sendForApproval(env, d, true); log.push('reminded ' + d.id); }
   }
   try { log.push(await dailyReport(env)); } catch (e) { log.push('report failed: ' + e.message); }
+  if (weekday(today) === 0) { try { log.push(await weeklyUpdate(env)); } catch (e) { log.push('weekly update failed: ' + e.message); } }
   return log;
 }
 
@@ -443,6 +485,9 @@ async function handle(request, env) {
 
     // Manual triggers for testing: /run (daily job now) and /test?type=health|tech (one draft now)
     if (url.pathname === '/run') return new Response((await daily(env)).join('\n') || 'Nothing due today.');
+    if (url.pathname === '/queue') {
+      return html('<div style="font-family:sans-serif;padding:2rem;line-height:1.9;white-space:pre-line;max-width:46rem"><h2>Blog queue</h2>' + esc(queueText(await queue(env))) + '</div>');
+    }
     if (url.pathname === '/stats') {
       const day = url.searchParams.get('day') || istToday();
       return html('<div style="font-family:sans-serif;padding:2rem;line-height:1.9;white-space:pre-line"><h2>byananya.com on ' + esc(day) + '</h2>' + esc(statsText(await statsFor(env, day))) + '</div>');
