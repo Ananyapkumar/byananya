@@ -52,6 +52,17 @@ const label = t => t === 'health' ? 'Health post' : 'AI tools post';
 
 async function notify(env, title, message, url, tags) {
   // Sends to ntfy, checks it actually arrived at ntfy, retries once, and remembers the result (shown on /ping).
+  // ntfy refuses messages coming straight from Cloudflare, so send through the Google Apps Script relay in the founders sheet (also emails you).
+  if (env.NOTIFY_RELAY) {
+    try {
+      const r = await fetch(env.NOTIFY_RELAY, { method: 'POST', headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ title, message, click: url || '', tags: tags || ['memo'], topic: String(env.NTFY_TOPIC || '').trim() }) });
+      const t = (await r.text()).slice(0, 100);
+      const rec = { at: new Date().toISOString(), title, status: r.ok && /^ok/.test(t) ? 200 : r.status, reply: 'relay: ' + t };
+      try { await env.BLOG.put('notify:last', JSON.stringify(rec)); if (rec.status !== 200) await env.BLOG.put('notify:lastfail', JSON.stringify(rec)); } catch (e) {}
+      if (rec.status === 200) return rec;
+    } catch (e) {}
+  }
   const body = JSON.stringify({ topic: String(env.NTFY_TOPIC || '').trim(), title, message, click: url || undefined, tags: tags || ['memo'], priority: 4,
     actions: url ? [{ action: 'view', label: 'Open', url }] : undefined });
   const headers = { 'Content-Type': 'application/json' };
