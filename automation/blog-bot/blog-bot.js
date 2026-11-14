@@ -51,11 +51,20 @@ const prettyDate = s => new Date(s + 'T00:00:00Z').toLocaleDateString('en-IN', {
 const label = t => t === 'health' ? 'Health post' : 'AI tools post';
 
 async function notify(env, title, message, url, tags) {
-  await fetch('https://ntfy.sh', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ topic: env.NTFY_TOPIC, title, message, click: url, tags: tags || ['memo'], priority: 4,
-      actions: url ? [{ action: 'view', label: 'Open draft', url }] : undefined })
-  });
+  // Sends to ntfy, checks it actually arrived at ntfy, retries once, and remembers the result (shown on /ping).
+  const body = JSON.stringify({ topic: String(env.NTFY_TOPIC || '').trim(), title, message, click: url || undefined, tags: tags || ['memo'], priority: 4,
+    actions: url ? [{ action: 'view', label: 'Open', url }] : undefined });
+  const headers = { 'Content-Type': 'application/json' };
+  if (env.NTFY_TOKEN) headers.Authorization = 'Bearer ' + env.NTFY_TOKEN;
+  let status = 0, text = '';
+  for (let i = 0; i < 2; i++) {
+    try { const r = await fetch('https://ntfy.sh', { method: 'POST', headers, body }); status = r.status; text = (await r.text()).slice(0, 200); if (r.ok) break; }
+    catch (e) { text = e.message; }
+    await new Promise(res => setTimeout(res, 1500));
+  }
+  const rec = { at: new Date().toISOString(), title, status, reply: status === 200 ? 'ok' : text };
+  try { await env.BLOG.put('notify:last', JSON.stringify(rec)); if (status !== 200) await env.BLOG.put('notify:lastfail', JSON.stringify(rec)); } catch (e) {}
+  return rec;
 }
 
 // ---------- writing ----------
@@ -355,9 +364,9 @@ async function dailyReport(env) {
   if (!env.STATS) return 'no stats database';
   const yesterday = addDays(istToday(), -1);
   const s = await statsFor(env, yesterday);
-  await notify(env, `Yesterday on byananya.com: ${s.visitors} visitor${s.visitors === 1 ? '' : 's'}`, statsText(s), 'https://byananya.com', ['bar_chart']);
+  const sent = await notify(env, `Yesterday on byananya.com: ${s.visitors} visitor${s.visitors === 1 ? '' : 's'}`, statsText(s), 'https://byananya.com', ['bar_chart']);
   await env.STATS.prepare('DELETE FROM hits WHERE day < ?').bind(addDays(istToday(), -90)).run(); // keep 90 days
-  return 'report sent for ' + yesterday;
+  return "report sent for " + yesterday + " (ntfy " + sent.status + ")";
 }
 
 // ---------- weekly queue (Sundays) ----------
@@ -484,6 +493,12 @@ async function handle(request, env) {
     if (!env.ADMIN_KEY || k !== env.ADMIN_KEY) return html('<p style="font-family:sans-serif;padding:2rem">Nothing to see here.</p>', 403);
 
     // Manual triggers for testing: /run (daily job now) and /test?type=health|tech (one draft now)
+    if (url.pathname === '/ping') {
+      const r = await notify(env, 'Test from your blog bot', 'If you can read this on your phone, notifications work.', '', ['white_check_mark']);
+      const fail = await env.BLOG.get('notify:lastfail');
+      return new Response('ntfy answered: ' + r.status + ' ' + r.reply + '\nTopic length: ' + String(env.NTFY_TOPIC || '').length + ' characters' +
+        (fail ? '\nLast failure: ' + fail : '\nNo failures recorded.'));
+    }
     if (url.pathname === '/run') return new Response((await daily(env)).join('\n') || 'Nothing due today.');
     if (url.pathname === '/queue') {
       return html('<div style="font-family:sans-serif;padding:2rem;line-height:1.9;white-space:pre-line;max-width:46rem"><h2>Blog queue</h2>' + esc(queueText(await queue(env))) + '</div>');
