@@ -35,7 +35,7 @@ function buildPrompt(text, who, want, mode) {
     'Only use facts that are in the message. Never invent excuses, reasons or details I did not give (for example "my phone was on silent", "I was asleep", "I was busy with work"). If an excuse would help, leave it out rather than make one up.\n' +
     'polite = kind and gracious; firm = clear and confident, not rude; funny = light and witty, never mean, at most one emoji; ' +
     'british = peak polite British office energy like those viral reels: understated, terribly courteous, gently passive-aggressive ("I\'m terribly sorry, but...", "just circling back", "not to be a bother", "as per my previous message"), funny but never offensive. ' +
-    'For a crush or partner, playful and sweet is fine but keep it tasteful. Use the language of the original. Return only JSON: {"polite": "...", "firm": "...", "funny": "...", "british": "..."}';
+    'For a crush or partner, playful and sweet is fine but keep it tasteful. If my message has insults, swearing or name-calling (for example \"you are such an assface\"), NEVER repeat the insult or any version of it, not even in firm or funny. Work out what I actually feel or want (I am annoyed, I think they were unfair, I want them to stop) and say THAT, better: honest and direct is fine, insulting is not. Funny can tease lightly but never name-calls. Use the language of the original. Return only JSON: {"polite": "...", "firm": "...", "funny": "...", "british": "..."}';
 }
 
 export default {
