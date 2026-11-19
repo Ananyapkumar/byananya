@@ -273,3 +273,8 @@ section.block { padding-top: 6rem; }
 .modal-body h3 b { font-weight: 800; }
 .modal-body h3 .rest { color: var(--muted); font-weight: 600; }
 .modal-body .case-top { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: start; }
+
+/* Blog as a swipe carousel, like Work */
+.post-track { list-style: none; }
+.post-track .post-card { flex: 0 0 min(80%, 20rem); scroll-snap-align: start; }
+.post-track .empty { flex: 1 0 100%; color: var(--muted); padding: 1rem .25rem; }

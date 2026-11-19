@@ -203,11 +203,20 @@
   </section>
 
   <section class="block" id="blog" aria-labelledby="blog-h">
-    <div class="sec-head"><h2 id="blog-h">Blog<span>.</span></h2><p>A post every week on AI, automation and software, and a monthly running log.</p></div>
+    <div class="sec-head"><h2 id="blog-h">Blog<span>.</span></h2><p>Swipe through posts on AI, automation and software. Running and health posts are one tap away.</p></div>
     <div class="filters" role="group" aria-label="Filter posts">
-      <button aria-pressed="true" data-p="all">All posts</button><button aria-pressed="false" data-p="tech">AI, automation and software</button><button aria-pressed="false" data-p="health">Running and health</button>
+      <button aria-pressed="true" data-p="tech">AI, automation and software</button><button aria-pressed="false" data-p="health">Running and health</button>
     </div>
-    <ul class="post-grid" id="posts" style="margin-top:1.5rem"></ul>
+    <div class="carousel" style="margin-top:1.5rem">
+      <ul class="track post-track" id="posts"></ul>
+      <div class="car-nav">
+        <div class="dots" id="bdots" aria-hidden="true"></div>
+        <div class="arrows">
+          <button class="arrow" id="bprev" type="button" aria-label="Previous post"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+          <button class="arrow" id="bnext" type="button" aria-label="Next post"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button>
+        </div>
+      </div>
+    </div>
   </section>
 
   <section class="contact" id="hi" aria-labelledby="hi-h">
@@ -314,14 +323,14 @@ document.querySelectorAll('.protected[data-src]').forEach(function (el) {
 
 // Blog cards with topic filter, read from posts/index.json
 (function () {
-  var list = document.getElementById('posts'), all = [], current = 'all';
+  var list = document.getElementById('posts'), all = [], current = 'tech';
   var label = { tech: 'AI and automation', health: 'Running and health' };
-  var empty = { all: 'First posts drop soon.', tech: 'First post drops soon.', health: 'The first monthly update is on its way.' };
+  var empty = { tech: 'First post drops soon.', health: 'The first running and health post is on its way.' };
   var esc = function (t) { return String(t || '').replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
   var btns = document.querySelectorAll('[data-p]');
   function render() {
-    var items = all.filter(function (p) { return current === 'all' || (p.topic || 'tech') === current; });
-    if (!items.length) { list.innerHTML = '<li class="empty">' + empty[current] + '</li>'; return; }
+    var items = all.filter(function (p) { return (p.topic || 'tech') === current; });
+    if (!items.length) { list.innerHTML = '<li class="empty">' + empty[current] + '</li>'; bsync(); return; }
     list.innerHTML = items.map(function (p) {
       var k = p.topic || 'tech';
       var d = new Date(p.date + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -331,7 +340,23 @@ document.querySelectorAll('.protected[data-src]').forEach(function (el) {
         '<span class="meta"><time datetime="' + esc(p.date) + '">' + d + '</time><span class="t">' + esc(p.title) + '</span>' +
         (p.summary ? '<span class="summary">' + esc(p.summary) + '</span>' : '') + '</span></a></li>';
     }).join('');
+    list.scrollTo({ left: 0 }); bsync();
   }
+  // carousel controls, same as Work
+  var bdots = document.getElementById('bdots'), bprev = document.getElementById('bprev'), bnext = document.getElementById('bnext');
+  function cards() { return list.querySelectorAll('.post-card'); }
+  function bstep() { var c = cards()[0]; return c ? c.getBoundingClientRect().width + 20 : 300; }
+  function bsync() {
+    var n = cards().length, i = Math.min(Math.round(list.scrollLeft / bstep()), Math.max(n - 1, 0));
+    if (bdots.children.length !== n) bdots.innerHTML = Array(n + 1).join('<i></i>');
+    [].forEach.call(bdots.children, function (d, k) { d.classList.toggle('on', k === i); });
+    bprev.disabled = list.scrollLeft < 8;
+    bnext.disabled = list.scrollLeft + list.clientWidth > list.scrollWidth - 8;
+  }
+  bprev.addEventListener('click', function () { list.scrollBy({ left: -bstep(), behavior: 'smooth' }); });
+  bnext.addEventListener('click', function () { list.scrollBy({ left: bstep(), behavior: 'smooth' }); });
+  list.addEventListener('scroll', function () { requestAnimationFrame(bsync); }, { passive: true });
+  addEventListener('resize', bsync);
   btns.forEach(function (b) { b.addEventListener('click', function () { current = b.dataset.p; btns.forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); }); render(); }); });
   fetch('posts/index.json').then(function (r) { return r.json(); })
     .then(function (p) { all = p.sort(function (a, b) { return b.date.localeCompare(a.date); }); render(); })
